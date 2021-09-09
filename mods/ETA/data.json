@@ -6,5 +6,6 @@
   "type": "script",
   "url": "https://greasyfork.org/en/scripts/415592-melvor-eta",
   "featured": true,
+  "featuredOrder": 2,
   "featuredColor": "teal"
 }
