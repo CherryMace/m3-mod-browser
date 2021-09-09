@@ -1,4 +1,5 @@
 {
+  "id": "obstacle_filter",
   "title": "Obstacle Filter",
   "authors": ["TinyCoyote"],
   "version": "0.1.1",
