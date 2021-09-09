@@ -1,0 +1,10 @@
+{
+  "title": "Melvor Idle Cheat Engine (MICE)",
+  "authors": ["Aldous Watts"],
+  "version": "0.6.7",
+  "targetGameVersion": "0.21",
+  "type": "ext",
+  "info": "https://gitlab.com/aldousWatts/MICE/-/blob/main/README.md",
+  "url": "https://gitlab.com/aldousWatts/MICE/-/archive/main/MICE-main.zip",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/MICE/img/icon.png"
+}
