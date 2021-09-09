@@ -1,0 +1,22 @@
+{
+  "name": "m3-mod-browser",
+  "version": "1.0.0",
+  "description": "The \"API\" for M3's mod browser",
+  "main": "generate.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CherryMace/m3-mod-browser.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/CherryMace/m3-mod-browser/issues"
+  },
+  "homepage": "https://github.com/CherryMace/m3-mod-browser#readme",
+  "dependencies": {
+    "fs-extra": "^10.0.0"
+  }
+}
