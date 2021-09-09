@@ -1,0 +1,11 @@
+{
+  "title": "Combat Simulator Reloaded",
+  "authors": ["Visua", "TinyCoyote"],
+  "version": "1.5.12",
+  "targetGameVersion": "0.21",
+  "type": "ext",
+  "url": "https://github.com/visua0/Melvor-Idle-Combat-Simulator-Reloaded/releases/download/v1.5.12/melvor_idle_combat_simulator_reloaded-1.5.12.zip",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/img/icon.png",
+  "featured": "main",
+  "featuredImage": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/img/featured.png"
+}
