@@ -1,11 +1,14 @@
 {
   "id": "lemvor",
   "title": "Lemvor",
-  "authors": ["TinyCoyote"],
+  "authors": [
+    "TinyCoyote"
+  ],
   "version": "0.1.0",
   "targetGameVersion": "0.21",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/423027-lemvor/",
   "url": "https://greasyfork.org/en/scripts/423027-lemvor/",
-  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Lemvor/img/icon.png"
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Lemvor/img/icon.png",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Lemvor/cache/Lemvor.user.js"
 }

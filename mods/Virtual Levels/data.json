@@ -1,10 +1,13 @@
 {
   "id": "virtual_levels",
   "title": "Virtual Levels",
-  "authors": ["TinyCoyote"],
+  "authors": [
+    "TinyCoyote"
+  ],
   "version": "0.1.0",
   "targetGameVersion": "0.21",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/428138-melvor-virtual-levels",
-  "url": "https://greasyfork.org/en/scripts/428138-melvor-virtual-levels"
+  "url": "https://greasyfork.org/en/scripts/428138-melvor-virtual-levels",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Virtual%20Levels/cache/Melvor%20Virtual%20Levels.user.js"
 }

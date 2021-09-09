@@ -1,10 +1,13 @@
 {
   "id": "dungeontimer",
   "title": "DungeonTimer",
-  "authors": ["Chrono"],
+  "authors": [
+    "Chrono"
+  ],
   "version": "0.21.1.0",
   "targetGameVersion": "0.21",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/425457-melvor-dungeontimer",
-  "url": "https://greasyfork.org/en/scripts/425457-melvor-dungeontimer"
+  "url": "https://greasyfork.org/en/scripts/425457-melvor-dungeontimer",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/DungeonTimer/cache/Melvor%20DungeonTimer.user.js"
 }

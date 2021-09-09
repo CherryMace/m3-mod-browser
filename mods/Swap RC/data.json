@@ -1,10 +1,13 @@
 {
   "id": "swap_rc",
   "title": "Swap RC",
-  "authors": ["TinyCoyote"],
+  "authors": [
+    "TinyCoyote"
+  ],
   "version": "0.0.2",
   "targetGameVersion": "0.21",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/425582-melvor-swap-rc",
-  "url": "https://greasyfork.org/en/scripts/425582-melvor-swap-rc"
+  "url": "https://greasyfork.org/en/scripts/425582-melvor-swap-rc",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Swap%20RC/cache/Melvor%20Swap%20RC.user.js"
 }

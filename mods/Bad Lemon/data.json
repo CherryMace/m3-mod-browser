@@ -1,10 +1,13 @@
 {
   "id": "bad_lemon",
   "title": "Bad Lemon",
-  "authors": ["TinyCoyote"],
+  "authors": [
+    "TinyCoyote"
+  ],
   "version": "0.0.4",
   "targetGameVersion": "0.21",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/426675-bad-lemon",
-  "url": "https://greasyfork.org/en/scripts/426675-bad-lemon"
+  "url": "https://greasyfork.org/en/scripts/426675-bad-lemon",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Bad%20Lemon/cache/Bad%20Lemon.user.js"
 }

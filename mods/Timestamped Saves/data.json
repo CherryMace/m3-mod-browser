@@ -1,10 +1,13 @@
 {
   "id": "timestamped_saves",
   "title": "Timestamped Saves",
-  "authors": ["Visua"],
+  "authors": [
+    "Visua"
+  ],
   "version": "2.8",
   "targetGameVersion": "0.21",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/411909-melvor-idle-timestamped-saves",
-  "url": "https://greasyfork.org/en/scripts/411909-melvor-idle-timestamped-saves"
+  "url": "https://greasyfork.org/en/scripts/411909-melvor-idle-timestamped-saves",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Timestamped%20Saves/cache/Melvor%20Idle%20-%20Timestamped%20Saves.user.js"
 }

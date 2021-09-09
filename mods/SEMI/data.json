@@ -1,7 +1,10 @@
 {
   "id": "semi",
   "title": "SEMI",
-  "authors": ["Aldous Watts", "TheAlpacalypse"],
+  "authors": [
+    "Aldous Watts",
+    "TheAlpacalypse"
+  ],
   "version": "0.7.5",
   "targetGameVersion": "0.21",
   "type": "ext",
@@ -10,5 +13,6 @@
   "icon": "https://cherrymace.github.io/m3-mod-browser/mods/SEMI/img/icon.png",
   "featured": true,
   "featuredOrder": 1,
-  "featuredColor": "red"
+  "featuredColor": "red",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/SEMI/cache/SEMI-Build-v0.7.5.zip"
 }

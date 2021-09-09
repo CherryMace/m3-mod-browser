@@ -1,7 +1,10 @@
 {
   "id": "combat_simulator_reloaded",
   "title": "Combat Simulator Reloaded",
-  "authors": ["Visua", "TinyCoyote"],
+  "authors": [
+    "Visua",
+    "TinyCoyote"
+  ],
   "version": "1.5.12",
   "targetGameVersion": "0.21",
   "type": "ext",
@@ -10,5 +13,6 @@
   "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/img/icon.png",
   "featured": "main",
   "featuredOrder": 0,
-  "featuredImage": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/img/featured.png"
+  "featuredImage": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/img/featured.png",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/cache/melvor_idle_combat_simulator_reloaded-1.5.12.zip"
 }

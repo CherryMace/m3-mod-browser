@@ -1,10 +1,13 @@
 {
   "id": "show_modifiers",
   "title": "Show Modifiers",
-  "authors": ["TinyCoyote"],
+  "authors": [
+    "TinyCoyote"
+  ],
   "version": "0.2.3",
   "targetGameVersion": "0.21",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/423121-melvor-show-modifiers",
-  "url": "https://greasyfork.org/en/scripts/423121-melvor-show-modifiers"
+  "url": "https://greasyfork.org/en/scripts/423121-melvor-show-modifiers",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Show%20Modifiers/cache/Melvor%20Show%20Modifiers.user.js"
 }

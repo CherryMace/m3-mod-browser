@@ -1,11 +1,14 @@
 {
   "id": "quickshards",
   "title": "QuickShards",
-  "authors": ["Buttchouda"],
+  "authors": [
+    "Buttchouda"
+  ],
   "version": "1.1.0",
   "targetGameVersion": "0.21",
   "type": "script",
   "info": "https://github.com/ChaseStrackbein/melvor-idle-quickshards",
   "url": "https://greasyfork.org/en/scripts/428146-quickshards-for-melvor-idle",
-  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/QuickShards/img/icon.png"
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/QuickShards/img/icon.png",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/QuickShards/cache/QuickShards%20for%20Melvor%20Idle.user.js"
 }

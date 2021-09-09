@@ -1,10 +1,13 @@
 {
   "id": "obstacle_filter",
   "title": "Obstacle Filter",
-  "authors": ["TinyCoyote"],
+  "authors": [
+    "TinyCoyote"
+  ],
   "version": "0.1.1",
   "targetGameVersion": "0.21",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/430344-melvor-obstacle-filter",
-  "url": "https://greasyfork.org/en/scripts/430344-melvor-obstacle-filter"
+  "url": "https://greasyfork.org/en/scripts/430344-melvor-obstacle-filter",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Obstacle%20Filter/cache/Melvor%20Obstacle%20Filter.user.js"
 }

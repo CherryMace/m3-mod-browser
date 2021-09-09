@@ -1,7 +1,9 @@
 {
   "id": "eta",
   "title": "ETA",
-  "authors": ["TinyCoyote"],
+  "authors": [
+    "TinyCoyote"
+  ],
   "version": "0.6.4-0.2",
   "targetGameVersion": "0.21",
   "type": "script",
@@ -9,5 +11,6 @@
   "url": "https://greasyfork.org/en/scripts/415592-melvor-eta",
   "featured": true,
   "featuredOrder": 2,
-  "featuredColor": "teal"
+  "featuredColor": "teal",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/ETA/cache/Melvor%20ETA.user.js"
 }
