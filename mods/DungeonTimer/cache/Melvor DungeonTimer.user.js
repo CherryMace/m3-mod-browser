@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor DungeonTimer
 // @namespace	http://tampermonkey.net/
-// @version		0.21.1.1
+// @version		0.21.1.2
 // @description	Displays different statistics relating to dungeon completion (Completion count since the script has been installed,previous time, best time, average time)
 // @description	Please report issues via message to Chrono#1840 on Discord
 // @author		Chrono
@@ -451,7 +451,7 @@ addModal = (title, id, content) => {
 
     // create content wrapper
     const modalContent = document.createElement('div');
-    modalContent.className = 'modal-content';
+    modalContent.className = 'modal-content mdtmodal-content';
     modalDialog.appendChild(modalContent);
 
     // create header
@@ -658,7 +658,7 @@ row-gap:                   5px;                                   \
 justify-content:           center;                                \
 align-items:               center;                                \
 }                                                                 \
-.modal-content {                                                  \
+.mdtmodal-content {                                                  \
 width:                     fit-content;                           \
 padding:                   0px 10px;                              \
 }                                                                 \
@@ -712,10 +712,5 @@ line-height:               20px;                                  \
 padding:                   0 0.25rem;                             \
 }                                                                 \
 margin-right:              4px;                                   \
-}                                                                 \
-.m-1 {                                                            \
-background-color:          #e56767;                               \
-border-color:              #e56767;                               \
-padding:                   .375rem .375rem;                       \
 }                                                                 \
 " );
