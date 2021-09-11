@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      0.6.4
+// @version      0.6.5
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -598,7 +598,7 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         if (ALTMAGIC[actionID].selectItem >= 0 && selectedMagicItem[ALTMAGIC[actionID].selectItem] !== magicItem) {
           if (ALTMAGIC[actionID].selectItem != 0 && (getBankQty(magicItem) < 1 || lockedItems.includes(magicItem)))
             return false;
-          selectItemForMagic(ALTMAGIC[actionID].selectItem, magicItem, false);
+          selectItemForMagic(magicItem);
         }
         if (!isMagic) castMagic(true);
         return true;
@@ -1534,6 +1534,13 @@ function loadAQ() {
     }),
   ];
 
+  window.masteryIDs = {};
+  for (const skillName in options.triggers["Mastery Level"]) {
+    masteryIDs[skillName] = {};
+    for (const name in options.triggers["Mastery Level"][skillName])
+      masteryIDs[skillName][name] = fetchMasteryID(skillName, name);
+  }
+
   //load locally stored action queue if it exists
   loadLocalSave();
   console.log("Action Queue loaded");
@@ -2351,7 +2358,3 @@ function changePrayers(choice = []) {
   }
   for (const prayer of choice) player.togglePrayer(prayer);
 }
-
-setInterval(() => {
-  combatManager.loot.lootAll();
-}, 5000);
