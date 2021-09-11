@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor DungeonTimer
 // @namespace	http://tampermonkey.net/
-// @version		0.21.1.2
+// @version		0.21.1.3
 // @description	Displays different statistics relating to dungeon completion (Completion count since the script has been installed,previous time, best time, average time)
 // @description	Please report issues via message to Chrono#1840 on Discord
 // @author		Chrono
@@ -10,7 +10,7 @@
 // @noframes
 // ==/UserScript==
 
-
+var DISPLAY_CLEAR_BUTTONS = false;
 
 function script() {
     if (window.DungeonTimer !== undefined) {
@@ -108,10 +108,12 @@ function script() {
             destroyMenu(DungeonTimer.menuItemID, DungeonTimer.modalID);
 
             // create wrappers and access point
+            DungeonTimer.radio = document.createElement('div');
             DungeonTimer.content = document.createElement('div');
             DungeonTimer.content.className = 'mdtGridContainer';
+
             addMenuItem('Dungeon Timers', 'https://cdn.melvor.net/core/v018/assets/media/skills/combat/dungeon.svg', DungeonTimer.menuItemID, 'DungeonTimerModal')
-            addModal('Dungeon Timers', DungeonTimer.modalID, [DungeonTimer.content])
+            addModal('Dungeon Timers', DungeonTimer.modalID, [DungeonTimer.radio,DungeonTimer.content])
 
             // create the dungeon cards
             DungeonTimer.addDungeonData();
@@ -135,9 +137,12 @@ function script() {
 
         //for each dungeon, add a card to the modal menu that includes the dungeon image, its name and the data from local storage
         DungeonTimer.addDungeonData = () => {
+            DungeonTimer.toggleCard = new Card(DungeonTimer.radio, '', '150px', true);
+            DungeonTimer.toggleCard.addRadio('Display Timer Clear Buttons   ', 25, 'ClearButtonToggle', ['Show','Hide'], [ShowMDTButtons,HideMDTButtons], 1)
+
             for (i=0;i<DUNGEONS.length;i++)
             {
-                DungeonTimer.DungeonCard = new Card(DungeonTimer.content, '205px', '105px', true);
+                DungeonTimer.DungeonCard = new Card(DungeonTimer.content, '166px', '105px', true);
 
                 DungeonTimer.DungeonCard.addImage(DUNGEONS[dungeonOrder[i]].media, 30,'');
                 DungeonTimer.DungeonCard.addSectionTitle(DUNGEONS[dungeonOrder[i]].name, '')
@@ -154,12 +159,34 @@ function script() {
         //internal methods//
         ////////////////////
 
+        function HideMDTButtons() {
+            var clearButtons = document.getElementsByClassName("mdtbutton");
+            var grid = document.getElementsByClassName('mdtGridContainer')[0];
+            var cards = grid.getElementsByClassName('mdtCardContainer');
+
+            clearButtons.forEach(button => button.style.display = "none");
+            grid.style.gridTemplateRows = "167px 167px 167px 167px 167px";
+            cards.forEach(card => card.style.height = '166px');
+        }
+
+        function ShowMDTButtons() {
+            var clearButtons = document.getElementsByClassName("mdtbutton");
+            var grid = document.getElementsByClassName('mdtGridContainer')[0];
+            var cards = grid.getElementsByClassName('mdtCardContainer');
+
+            clearButtons.forEach(button => button.style.display = "block");
+            grid.style.gridTemplateRows = "207px 207px 207px 207px 207px";
+            cards.forEach(card => card.style.height = '206px');
+        }
+
         function deleteBestTime(index) {
+            console.log('Best Time Cleared.');
             window.DungeonTimerData[dungeonOrder[index]][2] = 0
             UpdateMenu(index)
         }
 
         function deleteAverageTime(index) {
+            console.log('Average Time Cleared.');
             window.DungeonTimerData[dungeonOrder[index]][3] = []
             UpdateMenu(index)
         }
@@ -587,7 +614,7 @@ Card = class {
         const newButton1 = document.createElement('button');
         newButton1.type = 'button';
         newButton1.id = `MCS ${buttonText1} Button`;
-        newButton1.className = 'btn btn-danger m-1';
+        newButton1.className = 'btn btn-danger m-1 mdtbutton';
         newButton1.style.width = `50%`;
         newButton1.style.color = `#fff`;
         newButton1.textContent = buttonText1;
@@ -596,7 +623,7 @@ Card = class {
         const newButton2 = document.createElement('button');
         newButton2.type = 'button';
         newButton2.id = `MCS ${buttonText2} Button`;
-        newButton2.className = 'btn btn-danger m-1';
+        newButton2.className = 'btn btn-danger m-1 mdtbutton';
         newButton2.style.width = `50%`;
         newButton2.style.color = `#fff`;
         newButton2.textContent = buttonText2;
@@ -629,7 +656,46 @@ Card = class {
         newImage.src = imageSrc;
         return newImage;
     }
+
+    addRadio(labelText, height, radioName, radioLabels, radioCallbacks, initialRadio, imageSrc = '') {
+        const newCCContainer = this.createCCContainer();
+        if (imageSrc && imageSrc !== '') {
+            newCCContainer.appendChild(this.createImage(imageSrc, height));
+        }
+        newCCContainer.appendChild(this.createLabel(labelText, ''));
+        newCCContainer.id = `MCS ${labelText} Radio Container`;
+        const radioContainer = document.createElement('div');
+        radioContainer.className = 'mcsRadioContainer';
+        newCCContainer.appendChild(radioContainer);
+        // Create Radio elements with labels
+        for (let i = 0; i < radioLabels.length; i++) {
+            radioContainer.appendChild(this.createRadio(radioName, radioLabels[i], `MCS ${labelText} Radio ${radioLabels[i]}`, initialRadio === i, radioCallbacks[i]));
+        }
+        this.container.appendChild(newCCContainer);
+    }
+
+    createRadio(radioName, radioLabel, radioID, checked, radioCallback) {
+        const newDiv = document.createElement('div');
+        newDiv.className = 'custom-control custom-radio custom-control-inline';
+        const newRadio = document.createElement('input');
+        newRadio.type = 'radio';
+        newRadio.id = radioID;
+        newRadio.name = radioName;
+        newRadio.className = 'custom-control-input';
+        if (checked) {
+            newRadio.checked = true;
+        }
+        newRadio.addEventListener('change', radioCallback);
+        newDiv.appendChild(newRadio);
+        const label = this.createLabel(radioLabel, radioID);
+        label.className = 'custom-control-label';
+        label.setAttribute('for', radioID);
+        newDiv.appendChild(label);
+        return newDiv;
+    }
 }
+
+
 
 //define GM_addStyle
 if (typeof GM_addStyle == 'undefined') {
@@ -652,13 +718,13 @@ GM_addStyle ( "                                                   \
 .mdtGridContainer {                                               \
 display:                   grid;                                  \
 grid-template-columns:     265px 265px 265px;                     \
-grid-template-rows:        205px 205px 205px 205px 205px 205px;   \
+grid-template-rows:        167px 167px 167px 167px 167px 167px;   \
 column-gap:                5px;                                   \
 row-gap:                   5px;                                   \
 justify-content:           center;                                \
 align-items:               center;                                \
 }                                                                 \
-.mdtmodal-content {                                                  \
+.mdtmodal-content {                                               \
 width:                     fit-content;                           \
 padding:                   0px 10px;                              \
 }                                                                 \
@@ -711,6 +777,7 @@ justify-content:           flex-end;                              \
 line-height:               20px;                                  \
 padding:                   0 0.25rem;                             \
 }                                                                 \
-margin-right:              4px;                                   \
+.mdtbutton {                                                      \
+display:                   none;                                  \
 }                                                                 \
 " );
