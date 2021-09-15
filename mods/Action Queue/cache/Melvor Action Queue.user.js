@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      0.6.5
+// @version      0.6.6
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -1071,8 +1071,9 @@ const aqHTML = `<div class="content" id="action-queue-container" style="display:
             </div>
           </div>
         </div>
-        <div style="margin: 10px 0 0 25px;">
+        <div style="margin: 10px 0 0 25px; display: flex; justify-content: space-between">
           <button type="button" class="btn btn-sm aq-grey" id="aq-mastery-config">Advanced Mastery Options</button>
+          <button type="button" style="font-size: 0.875rem" class="btn aq-delete btn-danger" id="aq-delete-all">delete all</button>
         </div>
         <h2 class="content-heading border-bottom mb-4 pb-2">Current Queue</h2>
         <div style="min-height: 50px" id="aq-item-container"></div>
@@ -1448,6 +1449,7 @@ function loadAQ() {
   document.getElementById("aq-mastery-enable").addEventListener("click", () => toggleMastery(true));
   document.getElementById("aq-mastery-disable").addEventListener("click", () => toggleMastery(false));
   document.getElementById("aq-cancel").addEventListener("click", () => cancelEdit());
+  document.getElementById("aq-delete-all").addEventListener("click", () => clearQueue());
   document.getElementById("aq-save-edit").addEventListener("click", () => submitEdit());
   document.getElementById("aq-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -2357,4 +2359,13 @@ function changePrayers(choice = []) {
       : choice.unshift(i[0]);
   }
   for (const prayer of choice) player.togglePrayer(prayer);
+}
+
+/**
+ * Function to delete every action
+ */
+function clearQueue() {
+  for (let i = actionQueueArray.length - 1; i >= 0; i--) {
+    deleteAction(actionQueueArray[i].elementID, "action");
+  }
 }
