@@ -1,0 +1,14 @@
+{
+  "id": "a_touch_of_mastery_achievement_patch",
+  "title": "A Touch of Mastery Achievement Patch",
+  "authors": [
+    "Buttchouda"
+  ],
+  "version": "1.0.0",
+  "targetGameVersion": "0.21",
+  "type": "script",
+  "info": "https://github.com/ChaseStrackbein/melvor-idle-achievement-patch",
+  "url": "https://github.com/ChaseStrackbein/melvor-idle-achievement-patch/blob/main/patch.js",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Achievement%20Patch/img/icon.png",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Achievement%20Patch/cache/Achievement%20Patch.user.js"
+}
