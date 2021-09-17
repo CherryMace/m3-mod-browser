@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      0.6.6
+// @version      0.6.8
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -1189,7 +1189,7 @@ function loadAQ() {
   for (const a of items) {
     options.triggers["Item Quantity"][a.name] = { "≥": "num", "≤": "num" };
     options.actions["Sell Item"][a.name] = null;
-    if (a.isPassiveItem) options.actions["Equip Passive"][a.name] = null;
+    if (a.validSlots && a.validSlots.includes("Passive")) options.actions["Equip Passive"][a.name] = null;
   }
 
   //add attack styles
@@ -2366,6 +2366,6 @@ function changePrayers(choice = []) {
  */
 function clearQueue() {
   for (let i = actionQueueArray.length - 1; i >= 0; i--) {
-    deleteAction(actionQueueArray[i].elementID, "action");
+    deleteAction(actionQueueArray[i].elementID, "trigger");
   }
 }
