@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Auto Farming
-// @version      1.3
+// @version      1.5
 // @description  Automatically plants your seeds, prioritizes highest level tree seed and equal allotment and herb produce. Comment seeds you don't want to plant and equipment you don't want to use.
 // @author		 GMiclotte
 // @match        https://*.melvoridle.com/*
@@ -15,14 +15,18 @@ function script() {
     maf.log = (...x) => {
         console.log('Melvor Auto Farming:', ...x);
     }
+    maf.allotmentPriority = 'amount';
+    maf.herbPriority = 'amount';
+    maf.treePriority = 'level';
+    maf.amountLimit = 1e5; // after reaching this amount of crops, aim for highest level seeds again
     maf.allotmentSeedOrder = [
-        // CONSTANTS.item.Potato_Seed,
-        // CONSTANTS.item.Onion_Seed,
-        // CONSTANTS.item.Cabbage_Seed,
-        // CONSTANTS.item.Tomato_Seed,
-        // CONSTANTS.item.Sweetcorn_Seed,
-        // CONSTANTS.item.Strawberry_Seed,
-        // CONSTANTS.item.Watermelon_Seed,
+        CONSTANTS.item.Potato_Seed,
+        CONSTANTS.item.Onion_Seed,
+        CONSTANTS.item.Cabbage_Seed,
+        CONSTANTS.item.Tomato_Seed,
+        CONSTANTS.item.Sweetcorn_Seed,
+        CONSTANTS.item.Strawberry_Seed,
+        CONSTANTS.item.Watermelon_Seed,
         CONSTANTS.item.Snape_Grass_Seed,
         CONSTANTS.item.Carrot_Seeds,
     ];
@@ -194,6 +198,10 @@ function script() {
                     choose = true;
                     minAmt = grownAmt;
                 }
+                if (minAmt > maf.amountLimit) {
+                    // fallback to highest level priority
+                    choose = true;
+                }
             }
             if (choose) {
                 chosenSeed = seed;
@@ -224,9 +232,9 @@ function script() {
             if (!maf.checkEmpty()) {
                 return;
             }
-            maf.farm(0, 3, maf.allotmentSeedOrder, "amount");
-            maf.farm(1, 2, maf.herbSeedOrder, "amount");
-            maf.farm(2, 1, maf.treeSeedOrder);
+            maf.farm(0, 3, maf.allotmentSeedOrder, maf.allotmentPriority);
+            maf.farm(1, 2, maf.herbSeedOrder, maf.herbPriority);
+            maf.farm(2, 1, maf.treeSeedOrder, maf.treePriority);
         } catch (e) {
             // catch and ignore newFarmingAreas is not defined
             // everything seems to work fine, but it still throws this error...
@@ -250,8 +258,7 @@ function script() {
     }
 
     function loadScript() {
-        if ((window.isLoaded && !window.currentlyCatchingUp)
-            || (typeof unsafeWindow !== 'undefined' && unsafeWindow.isLoaded && !unsafeWindow.currentlyCatchingUp)) {
+        if (confirmedLoaded) {
             // Only load script after game has opened
             clearInterval(scriptLoader);
             injectScript(script);

@@ -5,8 +5,8 @@
     "Breindahl",
     "TinyCoyote"
   ],
-  "version": "0.6.0",
-  "targetGameVersion": "0.21",
+  "version": "0.6.1",
+  "targetGameVersion": "0.22",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/405082-melvor-completion-log-helper",
   "url": "https://greasyfork.org/en/scripts/405082-melvor-completion-log-helper",

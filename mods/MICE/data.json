@@ -4,8 +4,8 @@
   "authors": [
     "Aldous Watts"
   ],
-  "version": "0.6.7",
-  "targetGameVersion": "0.21",
+  "version": "0.7.1",
+  "targetGameVersion": "0.22",
   "type": "ext",
   "info": "https://gitlab.com/aldousWatts/MICE/-/blob/main/README.md",
   "url": "https://gitlab.com/aldousWatts/MICE/-/archive/main/MICE-main.zip",

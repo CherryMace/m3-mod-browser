@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      0.6.8
+// @version      0.7.0
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -255,7 +255,7 @@ function fetchMasteryID(skillName, itemName) {
       masteryID = herbloreItemData.findIndex((a) => a.name == itemName);
       break;
     case "Thieving":
-      masteryID = thievingNPC.findIndex((a) => a.name == itemName);
+      masteryID = Thieving.npcs.find((a) => a.name == itemName).id;
       break;
     case "Agility":
       masteryID = agilityObstacles.findIndex((a) => a.name == itemName);
@@ -497,14 +497,35 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         if (!isAgility) startAgility();
         return true;
       };
-    case "Cooking":
-      actionID = cookingItems.find((a) => a.itemID == itemID).cookingID;
-      return () => {
-        if (skillLevel[CONSTANTS.skill.Cooking] < items[itemID].cookingLevel) return false;
-        if (selectedFood !== itemID) selectFood(itemID);
-        if (!isCooking) startCooking(0, false);
-        return true;
-      };
+    case "Cooking": {
+      const itemID = items.findIndex((a) => a.name == skillItem2);
+      const category = cookingItems.find((a) => a.itemID == itemID).cookingCategory;
+      if (skillItem == "Active") {
+        return () => {
+          [0, 1, 2].forEach((category) => collectFromStockpile(category));
+          if (skillLevel[CONSTANTS.skill.Cooking] < cookingItems.find((a) => a.itemID == itemID).cookingLevel)
+            return false;
+          if (offline.skill == CONSTANTS.skill.Cooking && offline.action.active == itemID) return true;
+          selectCookingRecipe(category, itemID);
+          toggleActiveCook(category);
+          const passives = passiveCooking.reduce((arr, item, index) => {
+            return index != category && item >= 0 ? [...arr, index] : arr;
+          }, []);
+          passives.forEach((a) => togglePassiveCook(a));
+          return true;
+        };
+      } else {
+        return () => {
+          [0, 1, 2].forEach((category) => collectFromStockpile(category));
+          if (skillLevel[CONSTANTS.skill.Cooking] < cookingItems.find((a) => a.itemID == itemID).cookingLevel)
+            return false;
+          if (passiveCooking[category] == itemID) return true;
+          selectCookingRecipe(category, itemID);
+          togglePassiveCook(category);
+          return true;
+        };
+      }
+    }
     case "Crafting":
       actionID = craftingItems.find((a) => a.itemID == itemID).craftingID;
       return () => {
@@ -641,14 +662,18 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         return isSummoning;
       };
     }
-    case "Thieving":
-      actionID = thievingNPC.findIndex((a) => a.name == skillItem);
+    case "Thieving": {
+      const npc = Thieving.npcs.find((a) => a.name == skillItem);
+      const area = Thieving.areas.find((a) => a.npcs.includes(npc.id));
+      const panel = thievingMenu.areaPanels.find((a) => a.area == area);
       return () => {
-        if (skillLevel[CONSTANTS.skill.Thieving] < thievingNPC[actionID].level) return false;
-        if (isThieving) pickpocket(npcID);
-        pickpocket(actionID);
+        if (skillLevel[CONSTANTS.skill.Thieving] < npc.level) return false;
+        if (offline.skill == CONSTANTS.skill.Thieving && game.thieving.currentNPC == npc) return true;
+        thievingMenu.selectNPCInPanel(npc, panel);
+        game.thieving.startThieving(area, npc);
         return true;
       };
+    }
     case "Woodcutting":
       actionID = [itemID, items.findIndex((a) => a.name == skillItem2)].slice(
         0,
@@ -772,6 +797,7 @@ function actionDescription(actionCategory, actionName, skillItem, skillItem2, qt
           description += ` from ${skillItem2}`;
         }
       }
+      if (actionName == "Cooking") description = `Start ${skillItem} Cooking ${skillItem2}`;
       if (actionName == "Woodcutting") description += ` & ${skillItem2}`;
       if (skillItem == "Arrow Shafts") description += ` from ${skillItem2}`;
       if (actionName == "Magic") {
@@ -1232,8 +1258,14 @@ function loadAQ() {
   {
     cookingItems.forEach((item) => {
       options.triggers["Mastery Level"]["Cooking"][items[item.itemID].name] = "num";
-      options.actions["Start Skill"]["Cooking"][items[item.itemID].name] = null;
     });
+    options.actions["Start Skill"]["Cooking"]["Active"] = cookingItems.reduce((obj, a) => {
+      obj[items[a.itemID].name] = null;
+      return obj;
+    }, {});
+    options.actions["Start Skill"]["Cooking"]["Passive"] = options.actions["Start Skill"]["Cooking"]["Active"];
+
+    console.log(options.actions);
 
     craftingItems.forEach((item) => {
       options.triggers["Mastery Level"]["Crafting"][items[item.itemID].name] = "num";
@@ -1303,7 +1335,7 @@ function loadAQ() {
       options.actions["Start Skill"]["Smithing"][items[item.itemID].name] = null;
     });
 
-    thievingNPC.forEach((npc) => {
+    Thieving.npcs.forEach((npc) => {
       options.triggers["Mastery Level"]["Thieving"][npc.name] = "num";
       options.actions["Start Skill"]["Thieving"][npc.name] = null;
     });

@@ -4,8 +4,8 @@
   "authors": [
     "TinyCoyote"
   ],
-  "version": "0.1.2",
-  "targetGameVersion": "0.21",
+  "version": "0.1.3",
+  "targetGameVersion": "0.22",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/430344-melvor-obstacle-filter",
   "url": "https://greasyfork.org/en/scripts/430344-melvor-obstacle-filter",
