@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Finders Keepers for Melvor Idle
-// @description Allows the user to quickly add previously found items to their bank via the item log.
-// @version     1.0.0
+// @description Allows the user to quickly add previously found items to their bank via the item log. Also hooks into SEMI's Living Bank Helper if available.
+// @version     1.1.0
 // @match       https://*.melvoridle.com/*
 // @exclude     https://wiki.melvoridle.com*
 // @grant       none
@@ -14,12 +14,27 @@ const main = () => {
   const init = () => {
     if (initialized) return;
     
-    const $itemLog = $('#itemlog-container');    
+    const $itemLog = $('#itemlog-container');
     $itemLog.on('click', 'img', onItemLogClick);
+    waitForSEMI(() => {
+      const $semiLivingBank = $('#living-bank-helper-container');
+      $semiLivingBank.on('click', 'img', onItemLogClick);
+    });
 
     initialized = true;
     console.log('Finders Keepers initialized');
   };
+  
+  const waitForSEMI = (callback, retries = 0) => {
+    if ($('#living-bank-helper-container').length) {
+      callback();
+      return;
+    }
+    
+    if (retries > 59) return;
+    
+    setTimeout(() => waitForSEMI(callback, ++retries), 1000);
+  }
   
   const onItemLogClick = (e) => {
     const $item = $(e.currentTarget);
