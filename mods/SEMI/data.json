@@ -5,14 +5,14 @@
     "Aldous Watts",
     "TheAlpacalypse"
   ],
-  "version": "0.8.0",
+  "version": "0.8.2",
   "targetGameVersion": "0.22",
   "type": "ext",
   "info": "https://gitlab.com/aldousWatts/SEMI",
-  "url": "https://gitlab.com/api/v4/projects/17090127/packages/generic/semi/0.8.0/SEMI-Build-v0.8.0.zip",
+  "url": "https://gitlab.com/api/v4/projects/17090127/packages/generic/semi/0.8.2/SEMI-Build-v0.8.2.zip",
   "icon": "https://cherrymace.github.io/m3-mod-browser/mods/SEMI/img/icon.png",
   "featured": true,
   "featuredOrder": 1,
   "featuredColor": "red",
-  "download": "https://cherrymace.github.io/m3-mod-browser/mods/SEMI/cache/SEMI-Build-v0.8.0.zip"
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/SEMI/cache/SEMI-Build-v0.8.2.zip"
 }
