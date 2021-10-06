@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        QuickShards for Melvor Idle
 // @description Allows the user to quickly purchase summoning shards from the summoning screen.
-// @version     1.1.0
+// @version     1.2.0
 // @match       https://*.melvoridle.com/*
 // @exclude     https://wiki.melvoridle.com*
 // @grant       none
@@ -17,6 +17,7 @@ const main = () => {
   let buyQuantity = 1;
   let ignoreBank = false;
   let shardsToBuy = [];
+  let shardIcons = [];
   const observer = new MutationObserver(update);
 
   // Cached jQuery objects
@@ -42,7 +43,7 @@ const main = () => {
 
     inject(buildBlock());
 
-    observer.observe($('#summoning-item-have').get(0), { childList: true });
+    observer.observe(summoningArtisanMenu.haves.iconContainer, { childList: true });
 
     initialized = true;
     console.log('QuickShards initialized');
@@ -171,21 +172,17 @@ const main = () => {
   }
 
   function updateItemContainer () {
+    shardIcons.forEach(icon => icon.destroy());
+    shardIcons = [];
+    
     if (!shardsToBuy.length) {
       $itemContainer.html('-');
       return;
     }
 
     $itemContainer.html('');
-    for (const [i, shard] of shardsToBuy.entries()) {
-      $itemContainer.append(createItemRecipeElement(shard.id, shard.quantity, 'bqs-summoning-item-buying-img-' + i));
-      tooltipInstances.summoning = tooltipInstances.summoning.concat(
-        tippy("#bqs-summoning-item-buying-img-" + i, {
-          content: items[shard.id].name,
-          placement: "top",
-          interactive: false,
-          animation: false,
-        }));
+    for (const shard of shardsToBuy) {
+      shardIcons.push(new ItemQtyIcon($itemContainer.get(0), shard.id, shard.quantity));
     }
   }
 
@@ -220,10 +217,7 @@ const main = () => {
   }
 
   function inject (block) {
-    $('#summoning-creation-element')
-      .find('#skill-recipe-selection-21')
-      .closest('.block')
-      .after(block);
+    summoningArtisanMenu.container.insertBefore(block.get(0), summoningArtisanMenu.productsCol);
   }
 
   function buildBlock () {
