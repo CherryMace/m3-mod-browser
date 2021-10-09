@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      0.7.0
+// @version      0.7.1
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -308,7 +308,7 @@ function setAction(actionCategory, actionName, skillItem, skillItem2, qty) {
       );
       return () => {
         if (checkRequirements(areaData.entryRequirements)) {
-          if (!(combatManager.isInCombat && combatManager.selectedMonster == mID))
+          if (!(combatManager.isInCombat && combatManager.selectedMonster == monsterIndex))
             combatManager.selectMonster(monsterIndex, areaData);
           return true;
         }
