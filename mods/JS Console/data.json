@@ -1,0 +1,17 @@
+{
+  "id": "js_console",
+  "title": "JS Console",
+  "authors": [
+    "Buttchouda"
+  ],
+  "version": "1.0.0",
+  "targetGameVersion": "0.22",
+  "type": "ext",
+  "info": "https://github.com/ChaseStrackbein/m3-dev-console",
+  "url": "https://github.com/ChaseStrackbein/m3-dev-console",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/JS%20Console/img/icon.png",
+  "featured": true,
+  "featuredOrder": 2,
+  "featuredColor": "grey",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/JS%20Console/cache/m3-dev-console.zip"
+}
