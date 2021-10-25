@@ -1,0 +1,17 @@
+{
+  "id": "keybindings",
+  "title": "Keybindings",
+  "authors": [
+    "Buttchouda"
+  ],
+  "version": "1.0.0",
+  "targetGameVersion": "0.22.1",
+  "type": "script",
+  "info": "https://github.com/ChaseStrackbein/melvor-keybindings",
+  "url": "https://github.com/ChaseStrackbein/melvor-keybindings",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Keybindings/img/icon.png",
+  "featured": true,
+  "featuredOrder": 3,
+  "featuredColor": "blue accent-4",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Keybindings/cache/kb.js"
+}
