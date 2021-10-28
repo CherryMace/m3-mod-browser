@@ -5,7 +5,7 @@
     "Buttchouda"
   ],
   "version": "1.0.0",
-  "targetGameVersion": "0.22",
+  "targetGameVersion": "0.22.1",
   "type": "script",
   "info": "https://github.com/ChaseStrackbein/melvor-idle-achievement-patch",
   "url": "https://raw.githubusercontent.com/ChaseStrackbein/melvor-idle-achievement-patch/main/patch.js",
