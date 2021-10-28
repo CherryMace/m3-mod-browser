@@ -1,6 +1,6 @@
 {
   "id": "js_console",
-  "title": "JS Console",
+  "title": "dev.Console",
   "authors": [
     "Buttchouda"
   ],
@@ -9,9 +9,9 @@
   "type": "ext",
   "info": "https://github.com/ChaseStrackbein/m3-dev-console",
   "url": "https://github.com/ChaseStrackbein/m3-dev-console",
-  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/JS%20Console/img/icon.png",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/devConsole/img/icon.png",
   "featured": true,
   "featuredOrder": 3,
   "featuredColor": "grey",
-  "download": "https://cherrymace.github.io/m3-mod-browser/mods/JS%20Console/cache/m3-dev-console.zip"
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/devConsole/cache/m3-dev-console.zip"
 }
