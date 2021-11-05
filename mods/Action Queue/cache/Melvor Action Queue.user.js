@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      0.7.1
+// @version      0.7.2
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -1609,12 +1609,19 @@ const replaceChar = [
 ];
 
 //replaces special characters with their html equivalent
-function htmlChar(string) {
+function htmlChar(string, reverse = false) {
   let s = string;
-  replaceChar.forEach(function (obj) {
-    const regEx = new RegExp(obj.reg + "(?!([^<]+)?>)", "g");
-    s = s.replace(regEx, obj.replace);
-  });
+  if (reverse) {
+    replaceChar.forEach(function (obj) {
+      const regEx = new RegExp(obj.replace + "(?!([^<]+)?>)", "g");
+      s = s.replace(regEx, obj.reg);
+    });
+  } else {
+    replaceChar.forEach(function (obj) {
+      const regEx = new RegExp(obj.reg + "(?!([^<]+)?>)", "g");
+      s = s.replace(regEx, obj.replace);
+    });
+  }
   return s;
 }
 
@@ -2263,7 +2270,7 @@ function editQueue(id, type) {
       });
       obj = obj[inputArray[i]];
     }
-    textBox.value = inputArray[i];
+    textBox.value = htmlChar(inputArray[i], true);
     textBox.type = "text";
     validInputs.C[i] = inputArray[i];
   }
