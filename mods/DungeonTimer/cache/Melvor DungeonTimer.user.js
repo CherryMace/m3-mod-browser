@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor DungeonTimer
 // @namespace	http://tampermonkey.net/
-// @version		0.21.1.3
+// @version		1.0.0.1
 // @description	Displays different statistics relating to dungeon completion (Completion count since the script has been installed,previous time, best time, average time)
 // @description	Please report issues via message to Chrono#1840 on Discord
 // @author		Chrono
