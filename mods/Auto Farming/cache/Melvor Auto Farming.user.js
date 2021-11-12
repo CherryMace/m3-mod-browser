@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Auto Farming
-// @version      1.5
+// @version      1.7
 // @description  Automatically plants your seeds, prioritizes highest level tree seed and equal allotment and herb produce. Comment seeds you don't want to plant and equipment you don't want to use.
 // @author		 GMiclotte
 // @match        https://*.melvoridle.com/*
@@ -26,6 +26,7 @@ function script() {
         CONSTANTS.item.Tomato_Seed,
         CONSTANTS.item.Sweetcorn_Seed,
         CONSTANTS.item.Strawberry_Seed,
+        CONSTANTS.item.Cherry_Seeds,
         CONSTANTS.item.Watermelon_Seed,
         CONSTANTS.item.Snape_Grass_Seed,
         CONSTANTS.item.Carrot_Seeds,
@@ -45,6 +46,7 @@ function script() {
         CONSTANTS.item.Willow_Tree_Seed,
         CONSTANTS.item.Maple_Tree_Seed,
         CONSTANTS.item.Yew_Tree_Seed,
+        CONSTANTS.item.Apple_Tree_Seeds,
         CONSTANTS.item.Magic_Tree_Seed,
     ];
 
@@ -258,7 +260,7 @@ function script() {
     }
 
     function loadScript() {
-        if (confirmedLoaded) {
+        if (typeof confirmedLoaded !== typeof undefined && confirmedLoaded) {
             // Only load script after game has opened
             clearInterval(scriptLoader);
             injectScript(script);

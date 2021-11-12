@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.8.0-0.22.1
+// @version		0.8.3-1.0
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -249,6 +249,7 @@ function script() {
                 CONSTANTS.skill.Herblore,
                 CONSTANTS.skill.Agility,
                 CONSTANTS.skill.Summoning,
+                CONSTANTS.skill.Astrology,
                 CONSTANTS.skill.Magic,
             ].forEach(i => {
                 const card = ETA.skillTargetCard.addTab(SKILLS[i].name, SKILLS[i].media, '', '150px', false);
@@ -366,7 +367,7 @@ function script() {
             node.parentNode.insertBefore(tempContainer('timeLeftHerblore'), node.nextSibling);
             // Cooking
             for (let i = 0; i < 3; i++) {
-                node = document.getElementById(`cooking-item-selected-element-${i}`);
+                node = document.getElementById(`cooking-menu-container`).children[i].firstChild.firstChild.firstChild.firstChild.children[4];
                 const newChild = html2Node(`<div class="col-12"/>`)
                 newChild.appendChild(tempContainer(`timeLeftCooking-${i}`));
                 node.parentNode.appendChild(newChild);
@@ -386,9 +387,9 @@ function script() {
         }
 
         ETA.makeMiningDisplay = function () {
-            miningData.forEach((_, i) => {
-                const node = document.getElementById(`mining-ore-img-${i}`);
-                node.parentNode.insertBefore(tempContainer(`timeLeftMining-${i}`), node);
+            Mining.rockData.forEach((_, i) => {
+                const node = document.getElementById(`mining-ores-container`).children[i].childNodes[1].childNodes[1].childNodes[1].children[7];
+                node.parentNode.insertBefore(tempContainer(`timeLeftMining-${(10 + i) % 11}`), node);
             });
         }
 
@@ -408,7 +409,7 @@ function script() {
 
         ETA.makeWoodcuttingDisplay = function () {
             trees.forEach((_, i) => {
-                const node = document.getElementById(`tree-rates-${i}`);
+                const node = document.getElementById(`cut-tree-${i}-progress`).parentNode;
                 node.parentNode.insertBefore(tempContainer(`timeLeftWoodcutting-${i}`), node.nextSibling);
             });
             const node = document.getElementById('skill-woodcutting-multitree').parentNode;
@@ -442,6 +443,15 @@ function script() {
             document.getElementById('agility-breakdown-items').appendChild(tempContainer('timeLeftAgility-Secondary'));
         }
 
+        ETA.makeAstrologyDisplay = function () {
+            ASTROLOGY.forEach((_, i) => {
+                const node = document.getElementById(`astrology-buttons-${i}`);
+                const wrapper = html2Node('<div class="col-12"></div>');
+                node.parentNode.insertBefore(wrapper, node);
+                wrapper.appendChild(tempContainer(`timeLeftAstrology-${i}`));
+            });
+        }
+
         ////////////////
         //main wrapper//
         ////////////////
@@ -450,7 +460,7 @@ function script() {
             // check if valid state
             switch (skillID) {
                 case CONSTANTS.skill.Firemaking:
-                    if (selectedLog === null) {
+                    if (game.firemaking.selectedRecipeID === -1) {
                         return;
                     }
                     break;
@@ -503,7 +513,7 @@ function script() {
             // gathering skills
             switch (skillID) {
                 case CONSTANTS.skill.Mining:
-                    data = miningData;
+                    data = Mining.rockData;
                     break;
 
                 case CONSTANTS.skill.Thieving:
@@ -528,7 +538,10 @@ function script() {
                             break;
                         }
                     }
-                    break
+                    break;
+                case CONSTANTS.skill.Astrology:
+                    data = ASTROLOGY;
+                    break;
             }
             if (data.length > 0) {
                 if (skillID !== CONSTANTS.skill.Agility) {
@@ -599,7 +612,7 @@ function script() {
                     initial.data = selectedCookingRecipe;
                     break;
                 case CONSTANTS.skill.Firemaking:
-                    initial.currentAction = selectedLog;
+                    initial.currentAction = game.firemaking.selectedRecipeID;
                     break;
                 case CONSTANTS.skill.Magic:
                     initial.currentAction = selectedAltMagic;
@@ -980,7 +993,7 @@ function script() {
                     }
                     rockHP /= (1 - noDamageChance / 100);
                     // compute average time per action
-                    let spawnTime = miningData[initial.currentAction].respawnInterval;
+                    let spawnTime = Mining.rockData[initial.currentAction].baseRespawnInterval;
                     if (poolReached(initial, poolXp, 1)) {
                         spawnTime *= 0.9;
                     }
@@ -1095,7 +1108,8 @@ function script() {
                 CONSTANTS.skill.Fishing,
                 CONSTANTS.skill.Mining,
                 CONSTANTS.skill.Thieving,
-                CONSTANTS.skill.Agility
+                CONSTANTS.skill.Agility,
+                CONSTANTS.skill.Astrology,
             ].includes(skillID);
         }
 
@@ -1261,8 +1275,9 @@ function script() {
 
         function configureFiremaking(initial) {
             initial.itemID = initial.currentAction;
-            initial.itemXp = logsData[initial.currentAction].xp * (1 + bonfireBonus / 100);
-            initial.skillInterval = logsData[initial.currentAction].interval;
+            const recipe = Firemaking.recipes[initial.currentAction];
+            initial.itemXp = recipe.baseXP * (1 + recipe.bonfireXPBonus / 100);
+            initial.skillInterval = recipe.baseInterval;
             initial.skillReq = [{id: initial.itemID, qty: 1}];
             return initial;
         }
@@ -1351,7 +1366,7 @@ function script() {
         }
 
         function configureMining(initial) {
-            initial.itemID = miningData[initial.currentAction].ore;
+            initial.itemID = Mining.rockData[initial.currentAction].oreID;
             initial.itemXp = items[initial.itemID].miningXP;
             initial.skillInterval = 3000;
             return configureGathering(initial);
@@ -1408,6 +1423,13 @@ function script() {
             } else {
                 initial.actions = initial.currentAction.map(x => agiAction(x));
             }
+            return configureGathering(initial);
+        }
+
+        function configureAstrology(initial) {
+            initial.itemID = undefined;
+            initial.itemXp = ASTROLOGY[initial.currentAction].provides.xp;
+            initial.skillInterval = AstrologyDefaults.interval;
             return configureGathering(initial);
         }
 
@@ -2020,6 +2042,10 @@ function script() {
                     break;
                 case CONSTANTS.skill.Summoning:
                     initial = configureSummoning(initial);
+                    break;
+                case CONSTANTS.skill.Astrology:
+                    initial = configureAstrology(initial);
+                    break;
             }
             // configure interval reductions
             initial.percentIntervalReduction += getTotalFromModifierArray("decreasedSkillIntervalPercent", initial.skillID);
@@ -2116,7 +2142,6 @@ function script() {
             // TODO: does not match the test-v0.21?980 implementation
             if (skill === CONSTANTS.skill.Firemaking
                 && player.modifiers.summoningSynergy_18_19
-                && bonfireBonus > 0
                 && herbloreBonuses[8].bonus[0] === 0
                 && herbloreBonuses[8].bonus[1] > 0) {
                 xpMultiplier += 5 / 100;
@@ -2428,9 +2453,7 @@ function script() {
         // data
         ETA.insigniaModifier = 1 - items[CONSTANTS.item.Clue_Chasers_Insignia].increasedItemChance / 100;
         // rhaelyx goes from 10% to 25% with charge stones
-        ETA.rhaelyxChargePreservation = conditionalModifierData.filter(
-            x => x.bankItemID === CONSTANTS.item.Charge_Stone_of_Rhaelyx
-        )[0].modifiers.increasedGlobalPreservationChance;
+        ETA.rhaelyxChargePreservation = conditionalModifiers.get(CONSTANTS.item.Crown_of_Rhaelyx)[0].modifiers.increasedGlobalPreservationChance;
 
         // lvlToXp cache
         ETA.lvlToXp = Array.from({length: 200}, (_, i) => exp.level_to_xp(i));
@@ -2446,7 +2469,6 @@ function script() {
             ["Crafting", ["Craft"]],
             ["Herblore", ["Herblore"]],
             ["Cooking", ["CookingRecipe"]],
-            ["Firemaking", ["Log"]],
             ["Summoning", ["Summon"]],
             // alt magic
             ["Magic", ["Magic", "ItemForMagic"]],
@@ -2498,6 +2520,8 @@ function script() {
         }
         // Thieving
         game.thieving.renderSkillNav = () => ETA.renderSkillNav('Thieving', 'thieving');
+        game.firemaking.renderSkillNav = () => ETA.renderSkillNav('Firemaking', 'firemaking');
+        game.mining.renderSkillNav = () => ETA.renderSkillNav('Mining', 'mining');
 
         // Create timeLeft containers
         ETA.makeProcessingDisplays();
@@ -2506,6 +2530,7 @@ function script() {
         ETA.makeWoodcuttingDisplay();
         ETA.makeFishingDisplay();
         ETA.makeAgilityDisplay();
+        ETA.makeAstrologyDisplay();
 
         // remake Agility display after loading the Agility Obstacles
         ETA.loadAgilityRef = loadAgility;
@@ -2570,7 +2595,7 @@ function script() {
     }
 
     function loadScript() {
-        if (confirmedLoaded) {
+        if (typeof isLoaded !== typeof undefined && isLoaded) {
             // Only load script after game has opened
             clearInterval(scriptLoader);
             injectScript(script);

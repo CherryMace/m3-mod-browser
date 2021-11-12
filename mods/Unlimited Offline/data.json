@@ -1,0 +1,13 @@
+{
+  "id": "unlimited_offline",
+  "title": "Unlimited Offline",
+  "authors": [
+    "TinyCoyote"
+  ],
+  "version": "0.0.1",
+  "targetGameVersion": "1.0",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/435372-melvor-unlimited-offline",
+  "url": "https://greasyfork.org/en/scripts/435372-melvor-unlimited-offline",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Unlimited%20Offline/cache/Melvor%20Unlimited%20Offline.user.js"
+}

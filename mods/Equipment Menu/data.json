@@ -1,0 +1,13 @@
+{
+  "id": "equipment_menu",
+  "title": "Equipment Menu",
+  "authors": [
+    "TinyCoyote"
+  ],
+  "version": "0.1.1",
+  "targetGameVersion": "1.0",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/433162-melvor-equipment-menu",
+  "url": "https://greasyfork.org/en/scripts/433162-melvor-equipment-menu",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Equipment%20Menu/cache/Melvor%20Equipment%20Menu.user"
+}

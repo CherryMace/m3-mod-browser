@@ -1,0 +1,13 @@
+{
+  "id": "melvor_snippets",
+  "title": "Melvor Snippets",
+  "authors": [
+    "TinyCoyote"
+  ],
+  "version": "0.0.5",
+  "targetGameVersion": "1.0",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/432152-melvor-snippets",
+  "url": "https://greasyfork.org/en/scripts/432152-melvor-snippets",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Melvor%20Snippets/cache/Melvor%20Snippets.user.js"
+}

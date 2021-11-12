@@ -4,8 +4,8 @@
   "authors": [
     "TinyCoyote"
   ],
-  "version": "0.2.4",
-  "targetGameVersion": "0.22",
+  "version": "0.2.7",
+  "targetGameVersion": "1.0",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/423121-melvor-show-modifiers",
   "url": "https://greasyfork.org/en/scripts/423121-melvor-show-modifiers",
