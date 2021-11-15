@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.8.3-1.0
+// @version		0.8.4-1.0
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -2504,24 +2504,25 @@ function script() {
         };
 
         // update tick-based skills
-        ETA.renderSkillNav = function (skillName, propName) {
-            try {
-                ETA.timeRemainingWrapper(CONSTANTS.skill[skillName], false);
-            } catch (e) {
-                console.error(e);
+        ETA.renderSkillMastery = (skillName, propName) => {
+            // mimic Craftingskill.renderSkillMastery
+            if (game[propName].renderQueue.skillMastery) {
+                try {
+                    ETA.timeRemainingWrapper(CONSTANTS.skill[skillName], false);
+                } catch (e) {
+                    console.error(e);
+                }
+                updateTotalMastery(CONSTANTS.skill[skillName]);
+                updateMasteryPoolProgress(CONSTANTS.skill[skillName]);
+                updateOpenMasteryXPModal(CONSTANTS.skill[skillName]);
             }
-            // mimic Craftingskill.renderSkillNav
-            if (game[propName].renderQueue.skillNav) {
-                skillNav.setAllInactive();
-                if (game[propName].isActive)
-                    skillNav.setActive(game[propName].id);
-            }
-            game[propName].renderQueue.skillNav = false;
+            game[propName].renderQueue.skillMastery = false;
         }
+
         // Thieving
-        game.thieving.renderSkillNav = () => ETA.renderSkillNav('Thieving', 'thieving');
-        game.firemaking.renderSkillNav = () => ETA.renderSkillNav('Firemaking', 'firemaking');
-        game.mining.renderSkillNav = () => ETA.renderSkillNav('Mining', 'mining');
+        game.thieving.renderSkillMastery = () => ETA.renderSkillMastery('Thieving', 'thieving');
+        game.firemaking.renderSkillMastery = () => ETA.renderSkillMastery('Firemaking', 'firemaking');
+        game.mining.renderSkillMastery = () => ETA.renderSkillMastery('Mining', 'mining');
 
         // Create timeLeft containers
         ETA.makeProcessingDisplays();
