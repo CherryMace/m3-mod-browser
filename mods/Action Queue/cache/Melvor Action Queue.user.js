@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      0.7.2
+// @version      1.0.0
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -46,6 +46,7 @@ const pageIndex = {
   Herblore: 19,
   Agility: 20,
   Summoning: 28,
+  Astrology: 31,
 };
 
 function checkAmmoQty(id) {
@@ -87,6 +88,7 @@ const options = {
     "Skill XP": {},
     "Mastery Level": {
       Agility: {},
+      Astrology: {},
       Cooking: {},
       Crafting: {},
       Farming: {},
@@ -107,6 +109,7 @@ const options = {
     "Prayer Points": { "≥": "num", "≤": "num" },
     "Potion Depleted": {
       Agility: null,
+      Astrology: null,
       Combat: null,
       Cooking: null,
       Crafting: null,
@@ -128,6 +131,7 @@ const options = {
   actions: {
     "Start Skill": {
       Agility: null,
+      Astrology: {},
       Cooking: {},
       Crafting: {},
       Firemaking: {},
@@ -497,6 +501,14 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         if (!isAgility) startAgility();
         return true;
       };
+    case "Astrology": {
+      const constellation = ASTROLOGY.find((a) => a.name == skillItem); // Find constellation
+      return () => {
+        if (skillLevel[CONSTANTS.skill.Astrology] < constellation.level) return false;
+        if (activeAstrology != constellation.id) toggleAstrology(constellation.id);
+        return true;
+      };
+    }
     case "Cooking": {
       const itemID = items.findIndex((a) => a.name == skillItem2);
       const category = cookingItems.find((a) => a.itemID == itemID).cookingCategory;
@@ -595,15 +607,14 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         return true;
       };
     case "Mining":
-      actionID = miningData.findIndex((a) => a.ore == itemID);
+      actionID = Mining.rockData.findIndex((a) => a.name == skillItem);
       return () => {
         if (
           (actionID === 9 && !canMineDragonite()) ||
-          skillLevel[CONSTANTS.skill.Mining] < miningData[actionID].level ||
-          rockData[actionID].depleted
+          skillLevel[CONSTANTS.skill.Mining] < Mining.rockData[actionID].levelRequired
         )
           return false;
-        if (!isMining || currentRock != actionID) mineRock(actionID, true);
+        if (!game.mining.isActive || game.mining.selectedRockId != actionID) game.mining.onRockClick(actionID);
         return true;
       };
     case "Magic": {
@@ -797,6 +808,7 @@ function actionDescription(actionCategory, actionName, skillItem, skillItem2, qt
           description += ` from ${skillItem2}`;
         }
       }
+      if (actionName == "Astrology") description = `Start studying ${skillItem} in ${actionName}`;
       if (actionName == "Cooking") description = `Start ${skillItem} Cooking ${skillItem2}`;
       if (actionName == "Woodcutting") description += ` & ${skillItem2}`;
       if (skillItem == "Arrow Shafts") description += ` from ${skillItem2}`;
@@ -1256,6 +1268,10 @@ function loadAQ() {
 
   //add mastery/action names for each skill
   {
+    ASTROLOGY.forEach((item) => {
+      options.triggers["Mastery Level"]["Astrology"][item.name] = "num";
+      options.actions["Start Skill"]["Astrology"][item.name] = null;
+    });
     cookingItems.forEach((item) => {
       options.triggers["Mastery Level"]["Cooking"][items[item.itemID].name] = "num";
     });
@@ -1264,8 +1280,6 @@ function loadAQ() {
       return obj;
     }, {});
     options.actions["Start Skill"]["Cooking"]["Passive"] = options.actions["Start Skill"]["Cooking"]["Active"];
-
-    console.log(options.actions);
 
     craftingItems.forEach((item) => {
       options.triggers["Mastery Level"]["Crafting"][items[item.itemID].name] = "num";
@@ -1320,9 +1334,11 @@ function loadAQ() {
       options.triggers["Mastery Level"]["Agility"][item.name] = "num";
     });
 
-    miningData.forEach((item) => {
-      options.triggers["Mastery Level"]["Mining"][items[item.ore].name] = "num";
-      options.actions["Start Skill"]["Mining"][items[item.ore].name] = null;
+    Object.keys(MiningOres).forEach((item) => {
+      if (isNaN(item)) {
+        options.triggers["Mastery Level"]["Mining"][item] = "num";
+        options.actions["Start Skill"]["Mining"][item] = null;
+      }
     });
 
     runecraftingItems.forEach((item) => {
