@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.0.0
+// @version      1.0.1
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -263,6 +263,9 @@ function fetchMasteryID(skillName, itemName) {
       break;
     case "Agility":
       masteryID = agilityObstacles.findIndex((a) => a.name == itemName);
+      break;
+    case "Astrology":
+      masteryID = ASTROLOGY.findIndex((a) => a.name == itemName);
       break;
   }
   return masteryID;
