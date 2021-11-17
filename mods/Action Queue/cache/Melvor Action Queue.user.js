@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.0.1
+// @version      1.0.2
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -266,6 +266,9 @@ function fetchMasteryID(skillName, itemName) {
       break;
     case "Astrology":
       masteryID = ASTROLOGY.findIndex((a) => a.name == itemName);
+      break;
+    case "Mining":
+      masteryID = Mining.rockData.findIndex((a) => a.name == itemName);
       break;
   }
   return masteryID;
@@ -1961,16 +1964,10 @@ function manageMastery() {
       if (masteryPoolLevelUp > 1) masteryPoolLevelUp = 1;
       let xp = lvlIndex[masteryClone[skill].lvl[masteryID] + 1] - MASTERY[skill].xp[masteryID];
       if (MASTERY[skill].pool >= xp) {
-        {
-          let currentLevel = masteryClone[skill].lvl[masteryID];
-          MASTERY[skill].xp[masteryID] += xp;
-          if (exp.xp_to_level(MASTERY[skill].xp[masteryID]) - 1 > currentLevel && currentLevel < 99) {
-            if (skill === CONSTANTS.skill.Woodcutting && currentLevel >= 98) updateWCRates();
-          }
-          updateMasteryProgress(skill, masteryID);
-        }
-        MASTERY[skill].pool -= xp;
-        updateMasteryPoolProgress(skill);
+        addMasteryXP(skill, masteryID, 0, true, xp, false);
+        addMasteryXPToPool(skill, -xp, false, true);
+        updateSpendMasteryScreen(skill, masteryID);
+        //showSpendMasteryXP(skill);
       }
       if (skill === CONSTANTS.skill.Fishing) {
         for (let i = 0; i < fishingAreas.length; i++) {
