@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name		A Touch of Mastery Achievement Patch
-// @version		1.0.0
+// @version		1.0.1
 // @description		Correctly allows for the unlocking of the 'A Touch of Mastery' achievement
 // @author		Buttchouda
 // @match		https://*.melvoridle.com/*
@@ -15,7 +15,7 @@ checkForSteamAchievements = function (...args) {
   for (let i = 0; i < achievementNames.length; i++) {
     switch (achievementNames[i]) {
       case "NEW_ACHIEVEMENT_1_4":
-        if (Object.values(masteryCache).some(m => Object.values(m).includes(99))) {
+        if (Object.values(masteryCache).some(m => Object.values(m.levels).includes(99))) {
           unlockSteamAchievement(achievementNames[i], i);
         }
         break;
