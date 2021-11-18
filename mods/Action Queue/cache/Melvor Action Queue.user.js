@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.0.2
+// @version      1.0.3
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -1430,7 +1430,7 @@ function loadAQ() {
   eval(
     buyShopItem
       .toString()
-      .replace(/}$/, "return canBuy}")
+      .replace(/}\s*}$/, "return canBuy}}")
       .replace(/^function (\w+)/, "window.$1 = function")
   );
 
