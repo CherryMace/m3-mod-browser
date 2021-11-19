@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.0.3
+// @version      1.0.4
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -1265,7 +1265,7 @@ function loadAQ() {
 
   //add skill names
   Object.keys(CONSTANTS.skill).forEach((a) => {
-    options.triggers["Skill Level"][a] = "num";
+    if (isNaN(a)) options.triggers["Skill Level"][a] = "num";
   });
   options.triggers["Skill XP"] = options.triggers["Skill Level"];
   Object.keys(options.triggers["Mastery Level"]).forEach(

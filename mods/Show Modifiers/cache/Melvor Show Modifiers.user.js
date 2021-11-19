@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Show Modifiers
-// @version      0.2.7
+// @version      0.2.8
 // @description  Adds a button to show all your modifiers
 // @author       GMiclotte
 // @match        https://*.melvoridle.com/*
@@ -688,8 +688,8 @@ function script() {
         getModifierNames(setNames, skillIDs) {
             // add skill based on skillID
             skillIDs.forEach(id => {
-                if (!setNames.includes(skillName[id])) {
-                    setNames.push(skillName[id].toLowerCase());
+                if (!setNames.includes(Skills[id])) {
+                    setNames.push(Skills[id].toLowerCase());
                 }
             });
             // add melee based on att/str skillID

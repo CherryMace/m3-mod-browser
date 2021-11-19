@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.8.4-1.0
+// @version		0.8.5-1.0
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -574,7 +574,7 @@ function script() {
                         asyncTimeRemaining(initial);
                     } else {
                         // wipe the display, there's no way of knowing which tree is being cut
-                        document.getElementById(`timeLeft${skillName[skillID]}-Secondary`).textContent = '';
+                        document.getElementById(`timeLeft${Skills[skillID]}-Secondary`).textContent = '';
                     }
                 }
                 if (skillID === CONSTANTS.skill.Agility) {
@@ -1088,7 +1088,7 @@ function script() {
         function calcTotalUnlockedItems(skillID, skillXp) {
             const currentSkillLevel = convertXpToLvl(skillXp);
             if (ETA.msLevelMap[skillID] === undefined) {
-                ETA.msLevelMap[skillID] = MILESTONES[skillName[skillID]].map(x => x.level)
+                ETA.msLevelMap[skillID] = MILESTONES[Skills[skillID]].map(x => x.level)
             }
             return binarySearch(ETA.msLevelMap[skillID], (t) => currentSkillLevel < t);
         }
@@ -2076,7 +2076,7 @@ function script() {
                 if (initial.targetPool !== 100) {
                     initial.targetPoolXp = initial.maxPoolXp / 100 * initial.targetPool;
                 }
-                initial.tokens = getQtyOfItem(CONSTANTS.item["Mastery_Token_" + skillName[initial.skillID]])
+                initial.tokens = getQtyOfItem(CONSTANTS.item["Mastery_Token_" + Skills[initial.skillID]])
             }
 
             // convert single action skills to `actions` format
@@ -2222,7 +2222,7 @@ function script() {
         }
 
         function injectHTML(initial, results, msLeft, now, initialRun = true) {
-            let timeLeftElementId = `timeLeft${skillName[initial.skillID]}`;
+            let timeLeftElementId = `timeLeft${Skills[initial.skillID]}`;
             if (initial.actions.length > 1) {
                 timeLeftElementId += "-Secondary";
             } else if (initial.isGathering) {
@@ -2557,7 +2557,7 @@ function script() {
         // Mastery Progress bars
         for (let id in SKILLS) {
             if (SKILLS[id].hasMastery) {
-                let name = skillName[id].toLowerCase();
+                let name = Skills[id].toLowerCase();
                 let bar = $(`#${name}-mastery-progress`)[0];
                 $(bar).after(`<div id="${id}-mastery-pool-progress-end" class="progress-bar bg-info" role="progressbar" style="width: 0%; background-color: #5cace59c !important;"></div>`);
             }

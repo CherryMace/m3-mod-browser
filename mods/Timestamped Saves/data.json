@@ -4,8 +4,8 @@
   "authors": [
     "Visua"
   ],
-  "version": "2.9",
-  "targetGameVersion": "0.22",
+  "version": "2.10",
+  "targetGameVersion": "1.0",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/411909-melvor-idle-timestamped-saves",
   "url": "https://greasyfork.org/en/scripts/411909-melvor-idle-timestamped-saves",
