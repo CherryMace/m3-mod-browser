@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Better Astrology Layout
 // @namespace    ididthisonawhimLeole
-// @version      1.1
+// @version      1.2
 // @description  Make the Melvor's Astrology layout less confusing by grouping together bonuses of similar rarity and highlighting rare rolls
 // @author       Leole
 // @match        https://melvoridle.com/*
@@ -23,7 +23,7 @@
                 var modSpan = mod.getElementsByTagName("span")[0]
                 if (typeof modSpan !== 'undefined'){
                     var modText = modSpan.textContent
-                    var modContainer = mod.children[0].children[1].children[0]
+                    var modContainer = mod.children[0].children[0].children[0]
                     if(modText.includes("4")){
                         modContainer.setAttribute("style", "border: 2px #85C1E9 solid !important;")
                     } else if (modText.includes("5")){
@@ -37,6 +37,9 @@
 
         createAstrologyBonusesElement = function(id) {
             let html = "";
+            let standardStarImg = "star_standard.svg";
+            let specialStarImg = "star_unique.svg";
+
             html += `<div class="block block-content block-content-full block-rounded-extra block-link-pop border-top border-astrology border-4x text-center">
             <div class="row gutters-tiny">
             <div class="col-12 p-1">
@@ -51,6 +54,13 @@
             </div>
             <div class="col-6 p-2" id="normal-bonuses-column">
             <div class="col-12 p-2">
+            <div class="media d-flex align-items-center push m-0">
+            <div class="m-auto font-w600">
+            <img class="skill-icon-sm mr-2" src="assets/media/skills/astrology/${standardStarImg}">
+            </div>
+            </div>
+            </div>
+            <div class="col-12 p-2">
             ${createAstrologyModifierElement(id, 0)}
             </div>
             <div class="col-12 p-2">
@@ -61,6 +71,13 @@
             </div>
             </div>
             <div class="col-6 p-2" id="special-bonuses-column">
+            <div class="col-12 p-2">
+            <div class="media d-flex align-items-center push m-0">
+            <div class="m-auto font-w600">
+            <img class="skill-icon-sm mr-2" src="assets/media/skills/astrology/${specialStarImg}">
+            </div>
+            </div>
+            </div>
             <div class="col-12 p-2">
             ${createAstrologyModifierElement(id, 1)}
             </div>
@@ -87,21 +104,16 @@
                 style = "border: 2px #FFD580 solid !important;"
             }
 
-            let starImg = "star_standard.svg";
             let dustImg = items[CONSTANTS.item.Stardust].media;
             let btnClass = "btn-primary";
             let btnCost = getSingleStardustCost();
             if (num % 2 !== 0) {
-                starImg = "star_unique.svg";
                 border = "border-top border-1x border-warning";
                 dustImg = items[CONSTANTS.item.Golden_Stardust].media;
                 btnClass = "btn-secondary";
                 btnCost = getSingleGoldenStardustCost();
             }
             return `<div class="media d-flex align-items-center push m-0">
-            <div class="m-1 font-w600">
-            <img class="skill-icon-sm mr-2" src="assets/media/skills/astrology/${starImg}">
-            </div>
             <div class="media-body">
             <div class="block block-rounded-double bg-combat-inner-dark p-1 mb-0 ${border} text-left" style="${style}">
             <h5 class="font-w700 font-size-sm m-1" id="astrology-modifier-${id}-${num}">${modText}</h5>
