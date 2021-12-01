@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.0.4
+// @version      1.0.5
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -9,7 +9,7 @@
 // @namespace    http://tampermonkey.net/
 // @noframes
 // ==/UserScript==
-
+ 
 let isVisible = false;
 let currentActionIndex = 0;
 let triggerCheckInterval = null;
@@ -48,17 +48,17 @@ const pageIndex = {
   Summoning: 28,
   Astrology: 31,
 };
-
+ 
 function checkAmmoQty(id) {
   const set = player.equipmentSets.find((a) => a.slots.Quiver.item.id == id);
   return set ? set.slots.Quiver.quantity : 0;
 }
-
+ 
 function checkFoodQty(id) {
   const food = player.food.slots.find((a) => a.item.id == id);
   return food ? food.quantity : 0;
 }
-
+ 
 function actionTab() {
   if (!isVisible) {
     changePage(3);
@@ -71,14 +71,14 @@ function actionTab() {
     isVisible = true;
   }
 }
-
+ 
 function hideActionTab() {
   if (isVisible) {
     document.getElementById("action-queue-container").style.display = "none";
     isVisible = false;
   }
 }
-
+ 
 const options = {
   //trigger options for dropdown menus
   triggers: {
@@ -162,7 +162,7 @@ const options = {
     "Remove Agility Obstacle": {},
   },
 };
-
+ 
 function setTrigger(category, name, greaterThan, masteryItem, number) {
   const itemID = items.findIndex((a) => a.name == name);
   number = parseInt(number, 10);
@@ -247,7 +247,7 @@ function setTrigger(category, name, greaterThan, masteryItem, number) {
     }
   }
 }
-
+ 
 function fetchMasteryID(skillName, itemName) {
   const itemID = items.findIndex((a) => a.name == itemName);
   let masteryID = itemID >= 0 && items[itemID].masteryID ? items[itemID].masteryID[1] : null;
@@ -273,7 +273,7 @@ function fetchMasteryID(skillName, itemName) {
   }
   return masteryID;
 }
-
+ 
 function setAction(actionCategory, actionName, skillItem, skillItem2, qty) {
   qty = parseInt(qty, 10);
   const itemID = items.findIndex((a) => a.name == actionName);
@@ -497,7 +497,7 @@ function setAction(actionCategory, actionName, skillItem, skillItem2, qty) {
     }
   }
 }
-
+ 
 function setSkillAction(actionName, skillItem, skillItem2) {
   const itemID = items.findIndex((a) => a.name == skillItem);
   let actionID = 0;
@@ -555,10 +555,9 @@ function setSkillAction(actionName, skillItem, skillItem2) {
     case "Firemaking":
       actionID = items[itemID].firemakingID;
       return () => {
-        if (skillLevel[CONSTANTS.skill.Firemaking] < logsData[actionID].level) return false;
-        if (selectedLog !== actionID) selectLog(actionID);
-        if (isBurning) burnLog(false);
-        if (!isBurning) burnLog(false);
+        if (skillLevel[CONSTANTS.skill.Firemaking] < Firemaking.recipes[actionID].levelRequired) return false;
+        if (game.firemaking.activeRecipe && game.firemaking.activeRecipe.logID !== actionID) game.firemaking.selectLog(actionID);
+        if (!game.firemaking.isActive) game.firemaking.burnLog();
         return true;
       };
     case "Fishing": {
@@ -698,7 +697,7 @@ function setSkillAction(actionName, skillItem, skillItem2) {
       );
       return () => {
         let result = true;
-
+ 
         currentTrees.forEach((tree) => {
           if (actionID.includes(tree)) {
             actionID.splice(
@@ -709,7 +708,7 @@ function setSkillAction(actionName, skillItem, skillItem2) {
             actionID.unshift(tree);
           }
         });
-
+ 
         actionID.forEach((i) => {
           if (skillLevel[CONSTANTS.skill.Woodcutting] >= trees[i].level) {
             cutTree(i);
@@ -721,7 +720,7 @@ function setSkillAction(actionName, skillItem, skillItem2) {
       };
   }
 }
-
+ 
 class Action {
   /**
    * Create an action object with trigger
@@ -802,7 +801,7 @@ class Action {
     }
   }
 }
-
+ 
 function actionDescription(actionCategory, actionName, skillItem, skillItem2, qty) {
   let description = "";
   switch (actionCategory) {
@@ -877,7 +876,7 @@ function actionDescription(actionCategory, actionName, skillItem, skillItem2, qt
   }
   return description;
 }
-
+ 
 function resetForm(arr) {
   arr.forEach((menu) => {
     document.getElementById(`aq-num${menu}`).type = "hidden";
@@ -892,7 +891,7 @@ function resetForm(arr) {
     });
   });
 }
-
+ 
 function submitForm() {
   try {
     //create array of the input values
@@ -903,7 +902,7 @@ function submitForm() {
       arr.push(document.getElementById(`aq-num${menu}`).value);
     });
     arr.splice(["≥", "≤", ""].includes(arr[2]) ? 3 : 2, 0, "");
-
+ 
     //validate trigger and action
     if (
       validateInput(
@@ -923,7 +922,7 @@ function submitForm() {
   }
   return false;
 }
-
+ 
 /**
  * Function to validate user input
  * @param {Object} obj options object to check against
@@ -936,7 +935,7 @@ function validateInput(obj, tier, n = 0) {
   if (obj[tier[n]] === null || (obj[tier[n]] === "num" && /^\d{1,10}$/.test(tier[n + 1]))) return true;
   return validateInput(obj[tier[n]], tier, n + 1);
 }
-
+ 
 /**
  * Updates input text boxes
  * @param {string} menu ('A'||'B'||'C')
@@ -981,7 +980,7 @@ function dropdowns(menu) {
     }
   }
 }
-
+ 
 const aqHTML = `<div class="content" id="action-queue-container" style="display: none">
 <div class="row row-deck">
   <div class="col-md-12">
@@ -1227,7 +1226,7 @@ const aqHTML = `<div class="content" id="action-queue-container" style="display:
 }
 </style>
 `;
-
+ 
 function loadAQ() {
   //add item names
   for (const a of items) {
@@ -1235,7 +1234,7 @@ function loadAQ() {
     options.actions["Sell Item"][a.name] = null;
     if (a.validSlots && a.validSlots.includes("Passive")) options.actions["Equip Passive"][a.name] = null;
   }
-
+ 
   //add attack styles
   for (const s in CONSTANTS.attackStyle) {
     options.actions["Change Attack Style"][s] = null;
@@ -1256,13 +1255,13 @@ function loadAQ() {
   for (const s of ANCIENT) {
     options.actions["Change Attack Style"]["Select Spell"]["Ancient"][s.name] = null;
   }
-
+ 
   //add pet names
   for (const pet of PETS) {
     const name = `${pet.name.split(",")[0]} (${pet.acquiredBy})`;
     options.triggers["Pet Unlocked"][name] = null;
   }
-
+ 
   //add skill names
   Object.keys(CONSTANTS.skill).forEach((a) => {
     if (isNaN(a)) options.triggers["Skill Level"][a] = "num";
@@ -1271,7 +1270,7 @@ function loadAQ() {
   Object.keys(options.triggers["Mastery Level"]).forEach(
     (skill) => (options.triggers["Mastery Pool %"][skill] = "num")
   );
-
+ 
   //add mastery/action names for each skill
   {
     ASTROLOGY.forEach((item) => {
@@ -1286,30 +1285,30 @@ function loadAQ() {
       return obj;
     }, {});
     options.actions["Start Skill"]["Cooking"]["Passive"] = options.actions["Start Skill"]["Cooking"]["Active"];
-
+ 
     craftingItems.forEach((item) => {
       options.triggers["Mastery Level"]["Crafting"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Crafting"][items[item.itemID].name] = null;
     });
-
+ 
     items.forEach((item) => {
       if (item.type == "Seeds") {
         options.triggers["Mastery Level"]["Farming"][item.name] = "num";
       }
     });
-
+ 
     items.forEach((item) => {
       if (item.type == "Logs") {
         options.triggers["Mastery Level"]["Firemaking"][item.name] = "num";
         options.actions["Start Skill"]["Firemaking"][item.name] = null;
       }
     });
-
+ 
     fishingItems.forEach((item) => {
       options.triggers["Mastery Level"]["Fishing"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Fishing"][items[item.itemID].name] = null;
     });
-
+ 
     items.forEach((item) => {
       if (item.type == "Logs") {
         options.triggers["Mastery Level"]["Woodcutting"][item.name] = "num";
@@ -1321,7 +1320,7 @@ function loadAQ() {
         (a) => (options.actions["Start Skill"]["Woodcutting"][log][a] = null)
       );
     }
-
+ 
     fletchingItems.forEach((item) => {
       options.triggers["Mastery Level"]["Fletching"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Fletching"][items[item.itemID].name] = null;
@@ -1330,38 +1329,38 @@ function loadAQ() {
     for (const log in options.actions["Start Skill"]["Woodcutting"]) {
       options.actions["Start Skill"]["Fletching"]["Arrow Shafts"][log] = null;
     }
-
+ 
     herbloreItemData.forEach((item) => {
       options.triggers["Mastery Level"]["Herblore"][item.name] = "num";
       options.actions["Start Skill"]["Herblore"][item.name] = null;
     });
-
+ 
     agilityObstacles.forEach((item) => {
       options.triggers["Mastery Level"]["Agility"][item.name] = "num";
     });
-
+ 
     Object.keys(MiningOres).forEach((item) => {
       if (isNaN(item)) {
         options.triggers["Mastery Level"]["Mining"][item] = "num";
         options.actions["Start Skill"]["Mining"][item] = null;
       }
     });
-
+ 
     runecraftingItems.forEach((item) => {
       options.triggers["Mastery Level"]["Runecrafting"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Runecrafting"][items[item.itemID].name] = null;
     });
-
+ 
     smithingItems.forEach((item) => {
       options.triggers["Mastery Level"]["Smithing"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Smithing"][items[item.itemID].name] = null;
     });
-
+ 
     Thieving.npcs.forEach((npc) => {
       options.triggers["Mastery Level"]["Thieving"][npc.name] = "num";
       options.actions["Start Skill"]["Thieving"][npc.name] = null;
     });
-
+ 
     summoningItems.forEach((item) => {
       options.triggers["Mastery Level"]["Summoning"][items[item.itemID].name] = "num";
       if (items[item.itemID].summoningReq.length == 1) {
@@ -1375,7 +1374,7 @@ function loadAQ() {
       }
     });
   }
-
+ 
   //agility obstacles
   options.actions["Build Agility Obstacle"] = agilityObstacles.reduce((obj, a) => {
     if (!obj.hasOwnProperty(a.category + 1)) obj[a.category + 1] = {};
@@ -1385,13 +1384,13 @@ function loadAQ() {
   Object.keys(options.actions["Build Agility Obstacle"]).forEach(
     (a) => (options.actions["Remove Agility Obstacle"][a] = null)
   );
-
+ 
   //potions
   options.actions["Use Potion"] = items.reduce((obj, item) => {
     if (item.type == "Potion") obj[item.name] = null;
     return obj;
   }, {});
-
+ 
   //prayer actions
   PRAYER.forEach((prayer) => (options.actions["Activate Prayers"][prayer.name] = {}));
   for (const prayer1 in options.actions["Activate Prayers"]) {
@@ -1399,7 +1398,7 @@ function loadAQ() {
     options.actions["Activate Prayers"][prayer1]["None"] = null;
   }
   options.actions["Activate Prayers"]["None"] = null;
-
+ 
   //add altmagic names
   ALTMAGIC.forEach((spell) => {
     options.actions["Start Skill"]["Magic"][spell.name] = {};
@@ -1415,7 +1414,7 @@ function loadAQ() {
       options.actions["Start Skill"]["Magic"][spell.name] = options.actions["Sell Item"];
     } else options.actions["Start Skill"]["Magic"][spell.name] = null;
   });
-
+ 
   //add food and ammo names
   for (const a of items.filter((a) => a.canEat)) {
     options.triggers["Equipped Item Quantity"][a.name] = "num";
@@ -1425,7 +1424,7 @@ function loadAQ() {
     (a) => a.hasOwnProperty("validSlots") && (a.validSlots[0] == "Quiver" || a.validSlots[0] == "Summon1")
   ))
     options.triggers["Equipped Item Quantity"][a.name] = "num";
-
+ 
   //edit buyShopItem  function so that it returns boolean based on if it met requirements
   eval(
     buyShopItem
@@ -1433,7 +1432,7 @@ function loadAQ() {
       .replace(/}\s*}$/, "return canBuy}}")
       .replace(/^function (\w+)/, "window.$1 = function")
   );
-
+ 
   //add shop items
   for (const category in SHOP) {
     SHOP[category].forEach((item, id) => {
@@ -1455,7 +1454,7 @@ function loadAQ() {
       }
     });
   }
-
+ 
   //add monster/dungeon names
   {
     //collect monster IDs
@@ -1467,13 +1466,13 @@ function loadAQ() {
     for (const dungeon of DUNGEONS) options.actions["Start Combat"][dungeon.name] = null;
     for (const monster of MONSTERS) options.triggers["Enemy in Combat"][monster.name] = null;
   }
-
+ 
   //add equippable items
   for (const a of items.filter((a) => a.hasOwnProperty("validSlots"))) {
     options.actions["Equip Item"][a.name] = null;
     options.actions["Unequip Item"][a.name] = null;
   }
-
+ 
   //add in sidebar item
   $("li.nav-main-item:contains(Bank)")[0].insertAdjacentHTML(
     "afterend",
@@ -1487,13 +1486,13 @@ function loadAQ() {
   );
   //add click for sidebar item
   $("li.nav-main-item:contains(Action Queue)")[0].addEventListener("click", () => actionTab());
-
+ 
   const htmlCollection = $('div[onclick^="changePage"]');
   for (let i = 0; i < htmlCollection.length; i++) htmlCollection[i].addEventListener("click", () => hideActionTab());
-
+ 
   //add main html
   document.getElementById("main-container").insertAdjacentHTML("beforeend", aqHTML);
-
+ 
   //add button clicks
   document.getElementById("aq-pause").addEventListener("click", () => togglePause());
   document.getElementById("aq-download").addEventListener("click", () => downloadActions());
@@ -1526,7 +1525,7 @@ function loadAQ() {
   document.getElementById("aq-base").addEventListener("change", () => updateMasteryConfig(false));
   document.getElementById("aq-config-close").addEventListener("click", () => masteryPopup(false));
   document.getElementById(`aq-mastery-array`).addEventListener("input", () => updateMasteryConfig(false));
-
+ 
   //fills category lists
   Object.keys(options.triggers).forEach((a) =>
     document.getElementById("aq-listA0").insertAdjacentHTML("beforeend", `<option>${a}</option>`)
@@ -1534,7 +1533,7 @@ function loadAQ() {
   Object.keys(options.actions).forEach((a) =>
     document.getElementById("aq-listB0").insertAdjacentHTML("beforeend", `<option>${a}</option>`)
   );
-
+ 
   //add event listener for dragging trigger blocks
   const triggerContainer = document.getElementById("aq-item-container");
   triggerContainer.addEventListener("dragover", (e) => {
@@ -1548,7 +1547,7 @@ function loadAQ() {
       triggerContainer.insertBefore(draggable, afterElement);
     }
   });
-
+ 
   //mastery stuff
   for (let i = 1; i < 100; i++) {
     lvlIndex[i] = exp.level_to_xp(i) + 1;
@@ -1566,7 +1565,7 @@ function loadAQ() {
     };
     updateMasteryLvl(skill);
   }
-
+ 
   for (const name in CONSTANTS.skill) {
     if (Object.keys(MASTERY).includes(`${CONSTANTS.skill[name]}`))
       document
@@ -1589,19 +1588,19 @@ function loadAQ() {
       animation: false,
     }),
   ];
-
+ 
   window.masteryIDs = {};
   for (const skillName in options.triggers["Mastery Level"]) {
     masteryIDs[skillName] = {};
     for (const name in options.triggers["Mastery Level"][skillName])
       masteryIDs[skillName][name] = fetchMasteryID(skillName, name);
   }
-
+ 
   //load locally stored action queue if it exists
   loadLocalSave();
   console.log("Action Queue loaded");
 }
-
+ 
 const replaceChar = [
   /*{ reg: "&", replace: "&amp;" },
   { reg: '"', replace: "&quot;" },
@@ -1629,7 +1628,7 @@ const replaceChar = [
   /* { reg: "\\*", replace: "&#42;" },
   { reg: ",", replace: "&sbquo;" },*/
 ];
-
+ 
 //replaces special characters with their html equivalent
 function htmlChar(string, reverse = false) {
   let s = string;
@@ -1646,7 +1645,7 @@ function htmlChar(string, reverse = false) {
   }
   return s;
 }
-
+ 
 function triggerCheck() {
   let result = true;
   if (currentActionIndex >= actionQueueArray.length) {
@@ -1672,7 +1671,7 @@ function triggerCheck() {
     updateQueue();
   }
 }
-
+ 
 /**
  * Updates colour and text in sidebar
  * @param {string} type ("start" || "stop" || "pause")
@@ -1692,7 +1691,7 @@ function updateTextColour(type) {
       document.getElementById("current-queue").innerHTML = "paused";
   }
 }
-
+ 
 function updateQueue() {
   actionQueueArray.forEach((action, index) => {
     const element = document.getElementById(action.elementID);
@@ -1704,11 +1703,11 @@ function updateQueue() {
     } else element.style.backgroundColor = "";
   });
 }
-
+ 
 function toggleLoop(start) {
   queueLoop = start;
 }
-
+ 
 function togglePause() {
   queuePause = !queuePause;
   if (queuePause) {
@@ -1733,14 +1732,14 @@ function togglePause() {
     document.getElementById("aq-pause").classList.remove("aq-green");
   }
 }
-
+ 
 let loadCheckInterval = setInterval(() => {
   if (isLoaded) {
     clearInterval(loadCheckInterval);
     loadAQ();
   }
 }, 200);
-
+ 
 function autoSave() {
   const saveData = {
     index: currentActionIndex,
@@ -1756,12 +1755,12 @@ function autoSave() {
   window.localStorage.setItem("AQSAVE" + currentCharacter, JSON.stringify(saveData));
   window.localStorage.setItem("AQMASTERY", JSON.stringify(masteryConfig));
 }
-
+ 
 //autosave every ~minute
 setInterval(() => {
   autoSave();
 }, 59550);
-
+ 
 function loadLocalSave() {
   const obj = JSON.parse(window.localStorage.getItem("AQSAVE" + currentCharacter));
   const config = JSON.parse(window.localStorage.getItem("AQMASTERY"));
@@ -1770,7 +1769,7 @@ function loadLocalSave() {
       masteryConfig[skill] = config[skill];
     }
   }
-
+ 
   if (obj === null) return;
   if (obj.loop) {
     toggleLoop(true);
@@ -1800,7 +1799,7 @@ function loadLocalSave() {
   }
   updateQueue();
 }
-
+ 
 function setCurrentAction(id) {
   const index = actionQueueArray.findIndex((a) => a.elementID == id);
   if (index >= 0) {
@@ -1808,7 +1807,7 @@ function setCurrentAction(id) {
     updateQueue();
   }
 }
-
+ 
 function importActions() {
   const string = document.getElementById("aq-pastebin").value;
   if (!queuePause && actionQueueArray.length === 0) togglePause();
@@ -1853,7 +1852,7 @@ function importActions() {
     return false;
   }
 }
-
+ 
 function downloadActions() {
   const saveData = [];
   for (const action of actionQueueArray) {
@@ -1878,7 +1877,7 @@ function downloadActions() {
     }, 0);
   }
 }
-
+ 
 function updateMasteryLvl(skill) {
   MASTERY[skill].xp.forEach((xp, i) => {
     let level = 1;
@@ -1888,7 +1887,7 @@ function updateMasteryLvl(skill) {
   masteryClone[skill].completed = masteryClone[skill].lvl.every((a) => a == 99);
   masteryClone[skill].pool = MASTERY[skill].pool;
 }
-
+ 
 function manageMastery() {
   for (const skill in MASTERY) {
     //token claiming
@@ -1904,18 +1903,18 @@ function manageMastery() {
         updateItemInBank(bankID, itemID, -qtyToUse);
       }
     }
-
+ 
     //exit if pool unchanged
     if (
       masteryClone[skill].pool == MASTERY[skill].pool &&
       MASTERY[skill].pool < maxPool * masteryConfig[skill].checkpoint
     )
       continue;
-
+ 
     //exit if maxed mastery
     updateMasteryLvl(skill);
     if (masteryClone[skill].completed) continue;
-
+ 
     //choose masteryID
     let masteryID = 0;
     if (!masteryConfig[skill].prio || masteryClone[skill].lvl.some((a) => a < 60)) {
@@ -1953,7 +1952,7 @@ function manageMastery() {
       }
     }
     if (masteryID == undefined) continue;
-
+ 
     //level up chosen mastery
     if (
       MASTERY[skill].xp[masteryID] < 13034432 &&
@@ -1982,7 +1981,7 @@ function manageMastery() {
     }
   }
 }
-
+ 
 function toggleMastery(start) {
   if (start && manageMasteryInterval === null) {
     manageMasteryInterval = setInterval(() => {
@@ -1993,7 +1992,7 @@ function toggleMastery(start) {
     manageMasteryInterval = null;
   }
 }
-
+ 
 function addToQueue(obj) {
   actionQueueArray.push(obj);
   document.getElementById("aq-item-container").insertAdjacentHTML(
@@ -2015,14 +2014,14 @@ function addToQueue(obj) {
   <div style="min-height: 39px; padding-left: 10px;"></div>
 </div>`
   );
-
+ 
   //add button clicks
   const buttons = document.getElementById(obj.elementID).children[0].children[1].children;
   buttons[0].addEventListener("click", () => setCurrentAction(obj.elementID));
   buttons[1].addEventListener("click", () => editQueue(obj.elementID, "add"));
   buttons[2].addEventListener("click", () => editQueue(obj.elementID, "triggers"));
   buttons[3].addEventListener("click", () => deleteAction(obj.elementID, "trigger"));
-
+ 
   //add tooltips
   tooltips[obj.elementID] = [
     tippy(document.getElementById(obj.elementID).children[0].children[1].children[0], {
@@ -2051,7 +2050,7 @@ function addToQueue(obj) {
     reorderQueue();
     element.classList.remove("t-drag");
   });
-
+ 
   //append html for each action
   obj.action.forEach((action) => {
     document.getElementById(obj.elementID).children[1].insertAdjacentHTML(
@@ -2093,7 +2092,7 @@ function addToQueue(obj) {
     buttons[1].addEventListener("click", () => editQueue(action.elementID, "actions"));
     buttons[2].addEventListener("click", () => deleteAction(action.elementID, "action"));
   });
-
+ 
   //add eventlistener for dragging actions within trigger blocks
   const container = document.getElementById(obj.elementID).children[1];
   container.addEventListener("dragover", (e) => {
@@ -2107,7 +2106,7 @@ function addToQueue(obj) {
       container.insertBefore(draggable, afterElement);
     }
   });
-
+ 
   if (triggerCheckInterval === null && !queuePause) {
     currentActionIndex = 0;
     updateQueue();
@@ -2117,7 +2116,7 @@ function addToQueue(obj) {
     updateTextColour("start");
   }
 }
-
+ 
 function deleteAction(id, type) {
   tooltips[id].forEach((a) => a.destroy());
   delete tooltips[id];
@@ -2145,7 +2144,7 @@ function deleteAction(id, type) {
   const element = document.getElementById(id);
   if (element) element.remove();
 }
-
+ 
 function addAction(id, actionCategory, actionName, skillItem, skillItem2, qty) {
   let elementID = `AQ${nameIncrement++}`;
   let description = actionDescription(actionCategory, actionName, skillItem, skillItem2, qty);
@@ -2184,7 +2183,7 @@ function addAction(id, actionCategory, actionName, skillItem, skillItem2, qty) {
       animation: false,
     }),
   ];
-
+ 
   //add eventlisteners for dragging
   element.addEventListener("dragstart", () => {
     element.classList.add("a-drag");
@@ -2197,7 +2196,7 @@ function addAction(id, actionCategory, actionName, skillItem, skillItem2, qty) {
   buttons[1].addEventListener("click", () => editQueue(elementID, "actions"));
   buttons[2].addEventListener("click", () => deleteAction(elementID, "action"));
 }
-
+ 
 function getDragAfterElement(container, y, type) {
   const not = type == "aq-item" ? ".t-drag" : ".a-drag";
   const elements = [...container.querySelectorAll(`${type}:not(${not})`)];
@@ -2214,7 +2213,7 @@ function getDragAfterElement(container, y, type) {
     { offset: Number.NEGATIVE_INFINITY }
   ).element;
 }
-
+ 
 function reorderQueue() {
   const targetIndex = actionQueueArray[currentActionIndex].elementID;
   //remove stray dragging classes
@@ -2244,7 +2243,7 @@ function reorderQueue() {
   //reorder currentActionIndex
   currentActionIndex = actionQueueArray.findIndex((a) => a.elementID == targetIndex);
 }
-
+ 
 function editQueue(id, type) {
   cancelEdit(); //reset form
   currentlyEditing = { id, type };
@@ -2271,7 +2270,7 @@ function editQueue(id, type) {
   Object.keys(obj).forEach((e) => {
     document.getElementById("aq-listC0").insertAdjacentHTML("beforeend", `<option>${e}</option>`);
   });
-
+ 
   //populate text boxes to edit
   for (let i = 0; i < inputArray.length; i++) {
     let textBox;
@@ -2294,12 +2293,12 @@ function editQueue(id, type) {
   document.getElementById("aq-edit-container").style.top = `${y}px`;
   document.getElementById("aq-edit-container").style.display = "";
 }
-
+ 
 function cancelEdit() {
   document.getElementById("aq-edit-container").style.display = "none";
   resetForm(["C"]);
 }
-
+ 
 function submitEdit() {
   const a = document.getElementById("aq-edit-form").innerHTML.includes("Trigger");
   const arr = [];
@@ -2307,7 +2306,7 @@ function submitEdit() {
   if (a) arr.pop();
   arr.push(document.getElementById(`aq-numC`).value);
   if (a) arr.splice(["≥", "≤", ""].includes(arr[2]) ? 3 : 2, 0, "");
-
+ 
   if (
     validateInput(
       a ? options.triggers : options.actions,
@@ -2341,7 +2340,7 @@ function submitEdit() {
   }
   return false;
 }
-
+ 
 function updateMasteryConfig(changeSkill = true) {
   if (changeSkill) {
     if (masteryConfigChanges.skill != null) {
@@ -2377,7 +2376,7 @@ function updateMasteryConfig(changeSkill = true) {
     );
   }
 }
-
+ 
 function updateMasteryPriority() {
   const string = document.getElementById("aq-mastery-array").value;
   let arr = null;
@@ -2388,7 +2387,7 @@ function updateMasteryPriority() {
   arr = [...new Set(arr)].filter((a) => typeof MASTERY[masteryConfigChanges.skill].xp[a] == "number");
   masteryConfigChanges.arr = [...arr];
 }
-
+ 
 function masteryPopup(open) {
   if (open) {
     masteryConfigChanges.skill = null;
@@ -2399,7 +2398,7 @@ function masteryPopup(open) {
     document.getElementById("aq-mastery-config-container").style.display = "none";
   }
 }
-
+ 
 /**
  * Function to change active prayers
  * @param {Array} choice array of prayer IDs
@@ -2415,7 +2414,7 @@ function changePrayers(choice = []) {
   }
   for (const prayer of choice) player.togglePrayer(prayer);
 }
-
+ 
 /**
  * Function to delete every action
  */
