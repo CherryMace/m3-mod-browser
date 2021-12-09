@@ -4,8 +4,8 @@
   "authors": [
     "TinyCoyote"
   ],
-  "version": "0.0.3",
-  "targetGameVersion": "0.22",
+  "version": "0.0.4",
+  "targetGameVersion": "1.0",
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/425582-melvor-swap-rc",
   "url": "https://greasyfork.org/en/scripts/425582-melvor-swap-rc",
