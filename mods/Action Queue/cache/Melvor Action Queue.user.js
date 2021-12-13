@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.0.7
+// @version      1.0.8
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -355,7 +355,7 @@ function setAction(actionCategory, actionName, skillItem, skillItem2, qty) {
                 !player.equipment.slotArray.map((a) => a.item.id).includes(AURORAS[spellID].requiredItem)
               )
                 return false;
-              player.toggleSpellAurora(spellID);
+              player.toggleAurora(spellID);
               return true;
             };
           case "Ancient":
@@ -898,8 +898,7 @@ function submitForm() {
     //create array of the input values
     const arr = [];
     ["A", "B"].forEach((menu) => {
-      for (let i = 0; i < validInputs[menu].length; i++)
-        arr.push(document.getElementById(`aq-text${menu}${i}`).value);
+      for (let i = 0; i < validInputs[menu].length; i++) arr.push(document.getElementById(`aq-text${menu}${i}`).value);
       arr.push(document.getElementById(`aq-num${menu}`).value);
     });
     arr.splice(["≥", "≤", ""].includes(arr[2]) ? 3 : 2, 0, "");
