@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.0.8
+// @version      1.0.10
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -616,7 +616,7 @@ function setSkillAction(actionName, skillItem, skillItem2) {
       actionID = Mining.rockData.findIndex((a) => a.name == skillItem);
       return () => {
         if (
-          (actionID === 9 && !canMineDragonite()) ||
+          (actionID === 9 && !game.mining.canMineDragonite) ||
           skillLevel[CONSTANTS.skill.Mining] < Mining.rockData[actionID].levelRequired
         )
           return false;
@@ -1339,11 +1339,9 @@ function loadAQ() {
       options.triggers["Mastery Level"]["Agility"][item.name] = "num";
     });
 
-    Object.keys(MiningOres).forEach((item) => {
-      if (isNaN(item)) {
-        options.triggers["Mastery Level"]["Mining"][item] = "num";
-        options.actions["Start Skill"]["Mining"][item] = null;
-      }
+    Mining.rockData.forEach((item) => {
+        options.triggers["Mastery Level"]["Mining"][item.name] = "num";
+        options.actions["Start Skill"]["Mining"][item.name] = null;
     });
 
     runecraftingItems.forEach((item) => {
