@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.0.10
+// @version      1.1.0
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -150,7 +150,7 @@ const options = {
       "Slayer Task": null,
     },
     "Change Attack Style": { "Select Spell": { Normal: {}, Curse: {}, Aurora: {}, Ancient: {} } },
-    "Switch Equipment Set": { 1: null, 2: null, 3: null },
+    "Switch Equipment Set": { 1: null, 2: null, 3: null, 4: null },
     "Equip Item": {},
     "Equip Passive": {},
     "Unequip Item": {},
@@ -256,7 +256,7 @@ function fetchMasteryID(skillName, itemName) {
       masteryID = cookingItems.find((a) => a.itemID == itemID).cookingID;
       break;
     case "Herblore":
-      masteryID = herbloreItemData.findIndex((a) => a.name == itemName);
+      masteryID = Herblore.potions.find((a) => a.name == itemName).masteryID;
       break;
     case "Thieving":
       masteryID = Thieving.npcs.find((a) => a.name == itemName).id;
@@ -605,11 +605,11 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         return true;
       };
     case "Herblore":
-      actionID = herbloreItemData.findIndex((a) => a.name == skillItem);
+      actionID = Herblore.potions.findIndex((a) => a.name == skillItem);
       return () => {
-        if (skillLevel[CONSTANTS.skill.Herblore] < herbloreItemData[actionID].herbloreLevel) return false;
-        if (selectedHerblore !== actionID) selectHerblore(actionID);
-        if (!isHerblore) startHerblore(true);
+        if (skillLevel[CONSTANTS.skill.Herblore] < Herblore.potions[actionID].level) return false;
+        if (game.herblore.selectedRecipeID !== actionID) game.herblore.selectRecipeOnClick(actionID);
+        if (!game.herblore.isActive) game.herblore.start();
         return true;
       };
     case "Mining":
@@ -624,21 +624,23 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         return true;
       };
     case "Magic": {
-      actionID = ALTMAGIC.findIndex((a) => a.name == skillItem);
+      actionID = AltMagic.spells.findIndex((a) => a.name == skillItem);
       const magicItem = items.findIndex((a) => a.name == skillItem2);
       return () => {
-        if (
-          skillLevel[CONSTANTS.skill.Magic] < ALTMAGIC[actionID].magicLevelRequired ||
-          skillLevel[CONSTANTS.skill.Smithing] < smithingItems.find((a) => a.smithingLevel == skillItem2)
-        )
-          return false;
-        if (selectedAltMagic !== actionID) selectMagic(actionID);
-        if (ALTMAGIC[actionID].selectItem >= 0 && selectedMagicItem[ALTMAGIC[actionID].selectItem] !== magicItem) {
-          if (ALTMAGIC[actionID].selectItem != 0 && (getBankQty(magicItem) < 1 || lockedItems.includes(magicItem)))
-            return false;
-          selectItemForMagic(magicItem);
+        if (skillLevel[CONSTANTS.skill.Magic] < AltMagic.spells[actionID].level) return false;
+        if (game.altMagic.selectedSpellID !== actionID) game.altMagic.selectSpellOnClick(actionID);
+        switch (AltMagic.spells[actionID].consumes) {
+          case 3:
+            const bar = Smithing.recipes.find((a) => a.itemID == magicItem);
+            if (skillLevel[CONSTANTS.skill.Smithing] < bar.level) return false;
+            if (game.altMagic.selectedSmithingRecipe != bar) game.altMagic.selectBarOnClick(bar);
+            break;
+          case 1:
+          case 0:
+            if (game.altMagic.selectedConversionItem != magicItem) game.altMagic.selectItemOnClick(magicItem);
+            break;
         }
-        if (!isMagic) castMagic(true);
+        if (!game.altMagic.isActive) game.altMagic.start();
         return true;
       };
     }
@@ -651,11 +653,11 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         return true;
       };
     case "Smithing":
-      actionID = smithingItems.findIndex((a) => a.itemID == itemID);
+      actionID = Smithing.recipes.findIndex((a) => a.itemID == itemID);
       return () => {
-        if (skillLevel[CONSTANTS.skill.Smithing] < smithingItems[actionID].smithingLevel) return false;
-        if (selectedSmith !== actionID) selectSmith(actionID);
-        if (!isSmithing) startSmithing(true);
+        if (skillLevel[CONSTANTS.skill.Smithing] < Smithing.recipes[actionID].level) return false;
+        if (game.smithing.selectedRecipeID !== actionID) game.smithing.selectRecipeOnClick(actionID);
+        if (!game.smithing.isActive) game.smithing.start();
         return true;
       };
     case "Summoning": {
@@ -698,7 +700,8 @@ function setSkillAction(actionName, skillItem, skillItem2) {
       );
       return () => {
         let result = true;
-
+        let currentTrees = [];
+        game.woodcutting.activeTrees.forEach((a) => currentTrees.push(a.id));
         currentTrees.forEach((tree) => {
           if (actionID.includes(tree)) {
             actionID.splice(
@@ -711,8 +714,8 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         });
 
         actionID.forEach((i) => {
-          if (skillLevel[CONSTANTS.skill.Woodcutting] >= trees[i].level) {
-            cutTree(i);
+          if (skillLevel[CONSTANTS.skill.Woodcutting] >= Woodcutting.trees[i].levelRequired) {
+            game.woodcutting.selectTree(Woodcutting.trees[i]);
           } else {
             result = false;
           }
@@ -1330,7 +1333,7 @@ function loadAQ() {
       options.actions["Start Skill"]["Fletching"]["Arrow Shafts"][log] = null;
     }
 
-    herbloreItemData.forEach((item) => {
+    Herblore.potions.forEach((item) => {
       options.triggers["Mastery Level"]["Herblore"][item.name] = "num";
       options.actions["Start Skill"]["Herblore"][item.name] = null;
     });
@@ -1340,8 +1343,8 @@ function loadAQ() {
     });
 
     Mining.rockData.forEach((item) => {
-        options.triggers["Mastery Level"]["Mining"][item.name] = "num";
-        options.actions["Start Skill"]["Mining"][item.name] = null;
+      options.triggers["Mastery Level"]["Mining"][item.name] = "num";
+      options.actions["Start Skill"]["Mining"][item.name] = null;
     });
 
     runecraftingItems.forEach((item) => {
@@ -1349,7 +1352,7 @@ function loadAQ() {
       options.actions["Start Skill"]["Runecrafting"][items[item.itemID].name] = null;
     });
 
-    smithingItems.forEach((item) => {
+    Smithing.recipes.forEach((item) => {
       options.triggers["Mastery Level"]["Smithing"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Smithing"][items[item.itemID].name] = null;
     });
@@ -1398,17 +1401,15 @@ function loadAQ() {
   options.actions["Activate Prayers"]["None"] = null;
 
   //add altmagic names
-  ALTMAGIC.forEach((spell) => {
+  AltMagic.spells.forEach((spell) => {
     options.actions["Start Skill"]["Magic"][spell.name] = {};
-    if (spell.selectItem === 0) {
-      for (const item of smithingItems) {
-        if (item.category === 0) {
-          options.actions["Start Skill"]["Magic"][spell.name][items[item.itemID].name] = null;
-        }
+    if (spell.consumes === 3) {
+      for (const item of AltMagic.smithingBarRecipes) {
+        options.actions["Start Skill"]["Magic"][spell.name][items[item.itemID].name] = null;
       }
-    } else if (spell.isJunk) {
+    } else if (spell.consumes === 1) {
       junkItems.forEach((a) => (options.actions["Start Skill"]["Magic"][spell.name][items[a].name] = null));
-    } else if (spell.selectItem === 1) {
+    } else if (spell.consumes === 0) {
       options.actions["Start Skill"]["Magic"][spell.name] = options.actions["Sell Item"];
     } else options.actions["Start Skill"]["Magic"][spell.name] = null;
   });
@@ -1936,6 +1937,13 @@ function manageMastery() {
 }
 
 function toggleMastery(start) {
+  for (const skill in MASTERY) {
+    masteryClone[skill] = {
+      pool: MASTERY[skill].pool,
+      lvl: [],
+    };
+    updateMasteryLvl(skill);
+  }
   if (start && manageMasteryInterval === null) {
     manageMasteryInterval = setInterval(() => {
       manageMastery();

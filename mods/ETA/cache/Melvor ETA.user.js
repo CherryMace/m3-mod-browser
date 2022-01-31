@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.8.8
+// @version		0.9.1
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -130,10 +130,10 @@
                 return Math.ceil(target);
             },
             getTargetLevel: (skillID, currentLevel) => {
-                return ETASettings.getTarget(currentLevel, ETASettings.GLOBAL_TARGET_LEVEL, ETASettings.TARGET_LEVEL[skillID], 99, 199);
+                return ETASettings.getTarget(currentLevel, ETASettings.GLOBAL_TARGET_LEVEL, ETASettings.TARGET_LEVEL[skillID], 99, 170);
             },
             getTargetMastery: (skillID, currentMastery) => {
-                return ETASettings.getTarget(currentMastery, ETASettings.GLOBAL_TARGET_MASTERY, ETASettings.TARGET_MASTERY[skillID], 99, 199);
+                return ETASettings.getTarget(currentMastery, ETASettings.GLOBAL_TARGET_MASTERY, ETASettings.TARGET_MASTERY[skillID], 99, 170);
             },
             getTargetPool: (skillID, currentPool) => {
                 return ETASettings.getTarget(currentPool, ETASettings.GLOBAL_TARGET_POOL, ETASettings.TARGET_POOL[skillID], 100, 100);
@@ -404,8 +404,8 @@
             node = node.parentNode.parentNode.parentNode;
             node.parentNode.insertBefore(tempContainer('timeLeftFiremaking'), node.nextSibling);
             // Alt. Magic
-            node = document.getElementById('magic-item-have-and-div');
-            node.parentNode.insertBefore(tempContainer('timeLeftMagic'), node.nextSibling);
+            node = document.getElementById('magic-screen-cast').children[0].children[1];
+            node.appendChild(tempContainer('timeLeftMagic'));
             // Summoning
             node = document.querySelector('[aria-labelledBy=Summoning-artisan-menu-recipe-select]').parentElement.parentElement.parentElement
             if (node) {
@@ -435,11 +435,12 @@
         }
 
         ETA.makeWoodcuttingDisplay = function () {
-            trees.forEach((_, i) => {
-                const node = document.getElementById(`cut-tree-${i}-progress`).parentNode;
+            const els = document.getElementsByClassName('progress-bar bg-woodcutting');
+            Woodcutting.trees.forEach((_, i) => {
+                const node = els[i + 1].parentNode;
                 node.parentNode.insertBefore(tempContainer(`timeLeftWoodcutting-${i}`), node.nextSibling);
             });
-            const node = document.getElementById('skill-woodcutting-multitree').parentNode;
+            const node = els[0].parentNode;
             node.parentNode.insertBefore(tempContainer('timeLeftWoodcutting-Secondary'), node.nextSibling);
         }
 
@@ -492,7 +493,7 @@
                     }
                     break;
                 case Skills.Smithing:
-                    if (selectedSmith === null) {
+                    if (game.smithing.selectedRecipeID === -1) {
                         return;
                     }
                     break;
@@ -512,12 +513,12 @@
                     }
                     break;
                 case Skills.Magic:
-                    if (selectedAltMagic === -1) {
+                    if (game.altMagic.selectedSpellID === -1) {
                         return;
                     }
                     break;
                 case Skills.Herblore:
-                    if (selectedHerblore === null) {
+                    if (game.herblore.selectedRecipeID === -1) {
                         return;
                     }
                     break;
@@ -548,7 +549,7 @@
                     break;
 
                 case Skills.Woodcutting:
-                    data = trees;
+                    data = Woodcutting.trees;
                     break;
 
                 case Skills.Fishing:
@@ -573,7 +574,9 @@
             if (data.length > 0) {
                 if (skillID !== Skills.Agility) {
                     data.forEach((x, i) => {
-                        if (skillID === Skills.Woodcutting && currentlyCutting === 2 && currentTrees.includes(i)) {
+                        if (skillID === Skills.Woodcutting
+                            && game.woodcutting.activeTrees.size === 2
+                            && game.woodcutting.activeTrees.has(Woodcutting.trees[i])) {
                             return;
                         }
                         let initial = initialVariables(skillID, checkTaskComplete);
@@ -592,10 +595,11 @@
                     });
                 }
                 if (skillID === Skills.Woodcutting) {
-                    if (currentlyCutting === 2) {
+                    if (game.woodcutting.activeTrees.size === 2) {
                         // init first tree
                         let initial = initialVariables(skillID, checkTaskComplete);
-                        initial.currentAction = currentTrees;
+                        initial.currentAction = [];
+                        game.woodcutting.activeTrees.forEach(x => initial.currentAction.push(x.id));
                         initial.multiple = ETA.PARALLEL;
                         // run time remaining
                         asyncTimeRemaining(initial);
@@ -621,7 +625,7 @@
             let initial = initialVariables(skillID, checkTaskComplete);
             switch (initial.skillID) {
                 case Skills.Smithing:
-                    initial.currentAction = selectedSmith;
+                    initial.currentAction = game.smithing.selectedRecipeID;
                     break;
                 case Skills.Fletching:
                     initial.currentAction = selectedFletch;
@@ -633,7 +637,7 @@
                     initial.currentAction = selectedCraft;
                     break;
                 case Skills.Herblore:
-                    initial.currentAction = selectedHerblore;
+                    initial.currentAction = game.herblore.selectedRecipeID;
                     break;
                 case Skills.Cooking:
                     initial.data = selectedCookingRecipe;
@@ -642,7 +646,7 @@
                     initial.currentAction = game.firemaking.selectedRecipeID;
                     break;
                 case Skills.Magic:
-                    initial.currentAction = selectedAltMagic;
+                    initial.currentAction = game.altMagic.selectedSpellID;
                     break;
                 case Skills.Summoning:
                     initial.currentAction = selectedSummon;
@@ -875,7 +879,7 @@
                     if (poolReached(initial, poolXp, 2)) {
                         preservationChance += 5;
                     }
-                    if (items[itemID].tier === "dragon") {
+                    if (initial.recipe.category === 7) {
                         preservationChance += player.modifiers.summoningSynergy_5_17;
                     }
                     break;
@@ -1219,10 +1223,11 @@
         }
 
         function configureSmithing(initial) {
-            initial.itemID = smithingItems[initial.currentAction].itemID;
-            initial.itemXp = items[initial.itemID].smithingXP;
+            initial.recipe = Smithing.recipes[initial.currentAction];
+            initial.masteryID = initial.recipe.masteryID;
+            initial.itemXp = initial.recipe.baseXP;
             initial.skillInterval = 2000;
-            for (let i of items[initial.itemID].smithReq) {
+            for (let i of initial.recipe.itemCosts) {
                 const req = {...i};
                 if (req.id === Items.Coal_Ore) {
                     if (skillCapeEquipped(Items.Smithing_Skillcape)) {
@@ -1285,10 +1290,11 @@
         }
 
         function configureHerblore(initial) {
-            initial.itemID = herbloreItemData[initial.currentAction].itemID[getHerbloreTier(initial.currentAction)];
-            initial.itemXp = herbloreItemData[initial.currentAction].herbloreXP;
+            initial.recipe = Herblore.potions[initial.currentAction];
+            initial.itemXp = initial.recipe.baseXP;
+            initial.masteryID = initial.recipe.masteryID;
             initial.skillInterval = 2000;
-            for (let i of items[initial.itemID].herbloreReq) {
+            for (let i of initial.recipe.itemCosts) {
                 initial.skillReq.push(i);
             }
             return initial;
@@ -1306,11 +1312,10 @@
         }
 
         function configureFiremaking(initial) {
-            initial.itemID = initial.currentAction;
-            const recipe = Firemaking.recipes[initial.currentAction];
-            initial.itemXp = recipe.baseXP * (1 + recipe.bonfireXPBonus / 100);
-            initial.skillInterval = recipe.baseInterval;
-            initial.skillReq = [{id: initial.itemID, qty: 1}];
+            initial.recipe = Firemaking.recipes[initial.currentAction];
+            initial.itemXp = initial.recipe.baseXP * (1 + initial.recipe.bonfireXPBonus / 100);
+            initial.skillInterval = initial.recipe.baseInterval;
+            initial.skillReq = [{id: initial.recipe.logID, qty: 1}];
             return initial;
         }
 
@@ -1339,16 +1344,15 @@
 
         function configureMagic(initial) {
             initial.skillInterval = 2000;
+            initial.recipe = AltMagic.spells[initial.currentAction];
+            initial.selectedConversionItem = game.altMagic.selectedConversionItem;
+            initial.selectedSmithingRecipe = game.altMagic.selectedSmithingRecipe;
             //Find need runes for spell
-            if (ALTMAGIC[initial.currentAction].runesRequiredAlt !== undefined && useCombinationRunes) {
-                for (let i of ALTMAGIC[initial.currentAction].runesRequiredAlt) {
-                    initial.skillReq.push({...i});
+            game.altMagic.getCurrentRecipeRuneCosts()._items.forEach((qty, itemID) => {
+                if (itemID > -1) {
+                    initial.skillReq.push({id: itemID, qty: qty});
                 }
-            } else {
-                for (let i of ALTMAGIC[initial.currentAction].runesRequired) {
-                    initial.skillReq.push({...i});
-                }
-            }
+            });
             // Get Rune discount
             let capeMultiplier = 1;
             if (skillCapeEquipped(Items.Magic_Skillcape)) {
@@ -1363,31 +1367,14 @@
             }
             initial.skillReq = initial.skillReq.filter(item => item.qty > 0); // Remove all runes with 0 cost
             //Other items
-            if (ALTMAGIC[initial.currentAction].selectItem === 1 && selectedMagicItem[1] !== null) { // Spells that just use 1 item
-                let found = false;
-                for (const req of initial.skillReq) {
-                    if (req.id === selectedMagicItem[1]) {
-                        req.qty++;
-                        found = true;
-                    }
+            game.altMagic.getCurrentRecipeCosts()._items.forEach((qty, itemID) => {
+                if (itemID > -1) {
+                    initial.skillReq.push({id: itemID, qty: qty});
                 }
-                if (!found) {
-                    initial.skillReq.push({id: selectedMagicItem[1], qty: 1});
-                }
-            } else if (ALTMAGIC[initial.currentAction].selectItem === -1) { // Spells that doesn't require you to select an item
-                if (ALTMAGIC[initial.currentAction].needCoal) { // Rags to Riches II
-                    initial.skillReq.push({id: 48, qty: 1});
-                }
-            } else if (selectedMagicItem[0] !== null && ALTMAGIC[initial.currentAction].selectItem === 0) { // SUPERHEAT
-                for (let i of items[selectedMagicItem[0]].smithReq) {
-                    initial.skillReq.push({...i});
-                }
-                if (ALTMAGIC[initial.currentAction].ignoreCoal) {
-                    initial.skillReq = initial.skillReq.filter(item => item.id !== 48);
-                }
-            }
+            });
+            //
             initial.masteryLimLevel = [Infinity]; //AltMagic has no Mastery bonus
-            initial.itemXp = ALTMAGIC[initial.currentAction].magicXP;
+            initial.itemXp = initial.recipe.baseExperience;
             return initial;
         }
 
@@ -1399,7 +1386,7 @@
 
         function configureMining(initial) {
             initial.itemID = Mining.rockData[initial.currentAction].oreID;
-            initial.itemXp = items[initial.itemID].miningXP;
+            initial.itemXp = Mining.rockData[initial.currentAction].baseExperience;
             initial.skillInterval = 3000;
             return configureGathering(initial);
         }
@@ -1414,10 +1401,10 @@
         function configureWoodcutting(initial) {
             const wcAction = x => {
                 return {
-                    itemID: x,
-                    itemXp: trees[x].xp,
-                    skillInterval: trees[x].interval,
-                    masteryID: x,
+                    itemID: Woodcutting.trees[x].logID,
+                    itemXp: Woodcutting.trees[x].baseExperience,
+                    skillInterval: Woodcutting.trees[x].baseInterval,
+                    masteryID: Woodcutting.trees[x].id,
                 };
             }
             if (!isNaN(initial.currentAction)) {
@@ -1710,6 +1697,7 @@
             const averageActionTimes = current.actions.map((x, i) => intervalRespawnAdjustment(initial, currentIntervals[i], current.skillXp, current.poolXp, x.masteryXp, current.agiLapTime));
             // Current Xp
             let gains = gainPerAction(initial, current, currentIntervals);
+            current.gains = gains;
 
             // average gains
             const avgXpPerS = gains.map((x, i) => x.xpPerAction / averageActionTimes[i] * 1000).reduce((a, b) => a + b, 0);
@@ -1981,8 +1969,16 @@
             let current = currentVariables(initial);
 
             // loop until out of resources
+            let sumTotalTime = current.sumTotalTime;
             while (!initial.isGathering && resourcesLeft(current.itemQty, current.skillReqMap)) {
-                current = actionsToBreakpoint(initial, current);
+                current = actionsToBreakpoint(initial, current, false);
+                if (sumTotalTime === current.sumTotalTime || isNaN(current.sumTotalTime) || !isFinite(current.sumTotalTime)) {
+                    ETA.log(sumTotalTime)
+                    ETA.log(JSON.parse(JSON.stringify(initial)));
+                    ETA.log(JSON.parse(JSON.stringify(current)));
+                    break;
+                }
+                sumTotalTime = current.sumTotalTime;
             }
 
             // method to convert final pool xp to percentage
@@ -2005,6 +2001,12 @@
             // continue calculations until time to all targets is found
             while (!current.targetSkillReached || (initial.hasMastery && (!current.actions.map(x => x.targetMasteryReached).reduce((a, b) => a && b, true) || !current.targetPoolReached))) {
                 current = actionsToBreakpoint(initial, current, true);
+                if (sumTotalTime === current.sumTotalTime || isNaN(current.sumTotalTime) || !isFinite(current.sumTotalTime)) {
+                    ETA.log(JSON.parse(JSON.stringify(initial)));
+                    ETA.log(JSON.parse(JSON.stringify(current)));
+                    break;
+                }
+                sumTotalTime = current.sumTotalTime;
             }
             // if it is a gathering skill, then set final values to the values when reaching the final target
             if (initial.isGathering) {
@@ -2119,7 +2121,7 @@
             initial.actions.forEach(x => {
                 if (initial.hasMastery) {
                     if (!initial.isGathering) {
-                        x.masteryID = items[x.itemID].masteryID[1];
+                        x.masteryID = initial.masteryID ?? items[x.itemID].masteryID[1];
                     }
                     x.masteryXp = MASTERY[initial.skillID].xp[x.masteryID];
                     x.masteryLevel = convertXpToLvl(x.masteryXp);
@@ -2488,15 +2490,11 @@
         [	// skill name, select names, < start name >
             // start name is only required if the start method is not of the form `start${skill name}`
             // production skills
-            ["Smithing", ["Smith"]],
             ["Fletching", ["Fletch"]],
             ["Runecrafting", ["Runecraft"]],
             ["Crafting", ["Craft"]],
-            ["Herblore", ["Herblore"]],
             ["Cooking", ["CookingRecipe"]],
             ["Summoning", ["Summon"]],
-            // alt magic
-            ["Magic", ["Magic", "ItemForMagic"]],
             // gathering skills
             ["Fishing", ["Fish"]],
         ].forEach(skill => {
@@ -2529,25 +2527,26 @@
         };
 
         // update tick-based skills
-        ETA.renderSkillMastery = (skillName, propName) => {
-            // mimic Craftingskill.renderSkillMastery
-            if (game[propName].renderQueue.skillMastery) {
-                try {
-                    ETA.timeRemainingWrapper(Skills[skillName], false);
-                } catch (e) {
-                    console.error(e);
-                }
-                updateTotalMastery(Skills[skillName]);
-                updateMasteryPoolProgress(Skills[skillName]);
-                updateOpenMasteryXPModal(Skills[skillName]);
+        ETA.startActionTimer = (skillName, propName) => {
+            // call ETA
+            try {
+                ETA.timeRemainingWrapper(Skills[skillName], false);
+            } catch (e) {
+                console.error(e);
             }
-            game[propName].renderQueue.skillMastery = false;
+            // mimic Craftingskill.startActionTimer
+            game[propName].actionTimer.start(game[propName].actionInterval);
+            game[propName].renderQueue.progressBar = true;
         }
 
         // Thieving
-        game.thieving.renderSkillMastery = () => ETA.renderSkillMastery('Thieving', 'thieving');
-        game.firemaking.renderSkillMastery = () => ETA.renderSkillMastery('Firemaking', 'firemaking');
-        game.mining.renderSkillMastery = () => ETA.renderSkillMastery('Mining', 'mining');
+        game.thieving.startActionTimer = () => ETA.startActionTimer('Thieving', 'thieving');
+        game.firemaking.startActionTimer = () => ETA.startActionTimer('Firemaking', 'firemaking');
+        game.mining.startActionTimer = () => ETA.startActionTimer('Mining', 'mining');
+        game.woodcutting.startActionTimer = () => ETA.startActionTimer('Woodcutting', 'woodcutting');
+        game.herblore.startActionTimer = () => ETA.startActionTimer('Herblore', 'herblore');
+        game.altMagic.startActionTimer = () => ETA.startActionTimer('Magic', 'altMagic');
+        game.smithing.startActionTimer = () => ETA.startActionTimer('Smithing', 'smithing');
 
         // Create timeLeft containers
         ETA.makeProcessingDisplays();
