@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.9.1
+// @version		0.9.2
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -2528,11 +2528,13 @@
 
         // update tick-based skills
         ETA.startActionTimer = (skillName, propName) => {
-            // call ETA
-            try {
-                ETA.timeRemainingWrapper(Skills[skillName], false);
-            } catch (e) {
-                console.error(e);
+            if (game.loopStarted) {
+                // call ETA if game loop is active, in particular do not call ETA when catching up
+                try {
+                    ETA.timeRemainingWrapper(Skills[skillName], false);
+                } catch (e) {
+                    console.error(e);
+                }
             }
             // mimic Craftingskill.startActionTimer
             game[propName].actionTimer.start(game[propName].actionInterval);
@@ -2540,9 +2542,17 @@
         }
 
         // Thieving
-        game.thieving.startActionTimer = () => ETA.startActionTimer('Thieving', 'thieving');
+        game.thieving.startActionTimer = () => {
+            if (!game.thieving.isStunned) {
+                ETA.startActionTimer('Thieving', 'thieving');
+            }
+        }
         game.firemaking.startActionTimer = () => ETA.startActionTimer('Firemaking', 'firemaking');
-        game.mining.startActionTimer = () => ETA.startActionTimer('Mining', 'mining');
+        game.mining.startActionTimer = () => {
+            if (!game.mining.selectedRockActiveData.isRespawning) {
+                ETA.startActionTimer('Mining', 'mining');
+            }
+        }
         game.woodcutting.startActionTimer = () => ETA.startActionTimer('Woodcutting', 'woodcutting');
         game.herblore.startActionTimer = () => ETA.startActionTimer('Herblore', 'herblore');
         game.altMagic.startActionTimer = () => ETA.startActionTimer('Magic', 'altMagic');
