@@ -10,5 +10,6 @@
   "info": "https://github.com/ChaseStrackbein/melvor-idle-achievement-patch",
   "url": "https://raw.githubusercontent.com/ChaseStrackbein/melvor-idle-achievement-patch/main/patch.js",
   "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Achievement%20Patch/img/icon.png",
-  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Achievement%20Patch/cache/Achievement%20Patch.user.js"
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Achievement%20Patch/cache/Achievement%20Patch.user.js",
+  "hidden": true
 }

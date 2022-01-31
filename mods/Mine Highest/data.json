@@ -9,5 +9,6 @@
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/428066-melvor-mine-highest",
   "url": "https://greasyfork.org/en/scripts/428066-melvor-mine-highest",
-  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Mine%20Highest/cache/Melvor%20Mine%20Highest.user.js"
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Mine%20Highest/cache/Melvor%20Mine%20Highest.user.js",
+  "hidden": true
 }
