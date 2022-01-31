@@ -8,6 +8,7 @@ const mods = fs.readdirSync('./mods', { withFileTypes: true })
 
 for (const mod of mods) {
   const data = fs.readJSONSync(`./mods/${mod}/data.json`);
+  if (data.hidden) continue;
   allData.push(data);
 }
 
