@@ -9,7 +9,7 @@
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/412689-melvor-action-queue",
   "url": "https://greasyfork.org/en/scripts/412689-melvor-action-queue",
-  "featured": true,
+  "featured": false,
   "featuredOrder": 4,
   "featuredColor": "amber",
   "download": "https://cherrymace.github.io/m3-mod-browser/mods/Action%20Queue/cache/Melvor%20Action%20Queue.user.js"

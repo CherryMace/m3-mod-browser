@@ -9,8 +9,8 @@
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/415592-melvor-eta",
   "url": "https://greasyfork.org/en/scripts/415592-melvor-eta",
-  "featured": false,
-  "featuredOrder": 4,
+  "featured": true,
+  "featuredOrder": 2,
   "featuredColor": "teal",
   "download": "https://cherrymace.github.io/m3-mod-browser/mods/ETA/cache/Melvor%20ETA.user.js"
 }
