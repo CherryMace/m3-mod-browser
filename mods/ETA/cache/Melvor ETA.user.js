@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.9.2
+// @version		0.9.6
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -11,8 +11,8 @@
 // @include		https://*.melvoridle.com/*
 // @exclude		https://melvoridle.com/index.php
 // @exclude		https://*.melvoridle.com/index.php
-// @exclude		https://wiki.melvoridle.com*
-// @exclude		https://*.wiki.melvoridle.com*
+// @exclude		https://wiki.melvoridle.com/*
+// @exclude		https://*.wiki.melvoridle.com/*
 // @inject-into page
 // @noframes
 // @grant		none
@@ -36,7 +36,7 @@
 
     function startETA() {
         if (window.ETA !== undefined) {
-            console.error('ETA is already loaded!');
+            ETA.error('ETA is already loaded!');
         } else {
             createETA();
             loadETA();
@@ -162,6 +162,10 @@
 
         ETA.log = function (...args) {
             console.log("Melvor ETA:", ...args)
+        }
+
+        ETA.error = function (...args) {
+            console.error("Melvor ETA:", ...args)
         }
 
         ETA.createSettingsMenu = () => {
@@ -1185,7 +1189,7 @@
                 //////////////
                 //DEPRECATED//
                 //////////////
-                masteryID: 0,
+                masteryID: undefined,
                 masteryXp: 0,
                 skillInterval: 0,
                 itemID: undefined,
@@ -1314,6 +1318,7 @@
         function configureFiremaking(initial) {
             initial.recipe = Firemaking.recipes[initial.currentAction];
             initial.itemXp = initial.recipe.baseXP * (1 + initial.recipe.bonfireXPBonus / 100);
+            initial.masteryID = initial.recipe.masteryID;
             initial.skillInterval = initial.recipe.baseInterval;
             initial.skillReq = [{id: initial.recipe.logID, qty: 1}];
             return initial;
@@ -2510,7 +2515,7 @@
                     try {
                         ETA.timeRemainingWrapper(Skills[skillName], false);
                     } catch (e) {
-                        console.error(e);
+                        ETA.error(e);
                     }
                 };
             });
@@ -2521,7 +2526,7 @@
             try {
                 ETA.timeRemainingWrapper(skill, false);
             } catch (e) {
-                console.error(e);
+                ETA.error(e);
             }
             ETA.updateSkillWindowRef(skill);
         };
@@ -2533,7 +2538,7 @@
                 try {
                     ETA.timeRemainingWrapper(Skills[skillName], false);
                 } catch (e) {
-                    console.error(e);
+                    ETA.error(e);
                 }
             }
             // mimic Craftingskill.startActionTimer
@@ -2541,22 +2546,108 @@
             game[propName].renderQueue.progressBar = true;
         }
 
-        // Thieving
-        game.thieving.startActionTimer = () => {
-            if (!game.thieving.isStunned) {
-                ETA.startActionTimer('Thieving', 'thieving');
+        ETA.selectRecipeOnClick = (skillName, propName, recipeID) => {
+            if (recipeID !== game[propName].selectedRecipeID && game[propName].isActive) {
+                game[propName].stop();
+            }
+            game[propName].selectedRecipeID = recipeID;
+            game[propName].renderQueue.selectedRecipe = true;
+            game[propName].render();
+            try {
+                ETA.timeRemainingWrapper(Skills[skillName], false);
+            } catch (e) {
+                ETA.error(e);
             }
         }
-        game.firemaking.startActionTimer = () => ETA.startActionTimer('Firemaking', 'firemaking');
+
+        ETA.selectLog = (skillName, propName, recipeID) => {
+            const recipeToSelect = Firemaking.recipes[recipeID];
+            if (recipeToSelect.level > game[propName].level) {
+                notifyPlayer(game[propName].id, getLangString('TOASTS', 'LEVEL_REQUIRED_TO_BURN'), 'danger');
+            } else {
+                if (game[propName].selectedRecipeID !== recipeID && game[propName].isActive)
+                    game[propName].stop();
+                game[propName].selectedRecipeID = recipeID;
+                game[propName].renderQueue.selectedLog = true;
+                game[propName].renderQueue.logQty = true;
+                try {
+                    ETA.timeRemainingWrapper(Skills[skillName], false);
+                } catch (e) {
+                    ETA.error(e);
+                }
+            }
+        }
+
+        ETA.selectSpellOnClick = (skillName, propName, spellID) => {
+            if (game[propName].selectedSpellID !== spellID) {
+                if (game[propName].isActive)
+                    game[propName].stop();
+                game[propName].selectedConversionItem = -1;
+            }
+            game[propName].selectedSpellID = spellID;
+            game[propName].renderQueue.selectedSpellImage = true;
+            game[propName].renderQueue.selectedSpellInfo = true;
+            hideElement(altMagicItemMenu);
+            showElement(altMagicMenu);
+            game[propName].render();
+            try {
+                ETA.timeRemainingWrapper(Skills[skillName], false);
+            } catch (e) {
+                ETA.error(e);
+            }
+        }
+
+        ETA.selectItemOnClick = (skillName, propName, itemID) => {
+            game[propName].selectedConversionItem = itemID;
+            game[propName].renderQueue.selectedSpellInfo = true;
+            hideElement(altMagicItemMenu);
+            showElement(altMagicMenu);
+            game[propName].render();
+            altMagicMenu.setSpellImage(game[propName]);
+            try {
+                ETA.timeRemainingWrapper(Skills[skillName], false);
+            } catch (e) {
+                ETA.error(e);
+            }
+        }
+
+        ETA.selectBarOnClick = (skillName, propName, recipe) => {
+            game[propName].selectedSmithingRecipe = recipe;
+            game[propName].renderQueue.selectedSpellInfo = true;
+            hideElement(altMagicItemMenu);
+            showElement(altMagicMenu);
+            game[propName].render();
+            altMagicMenu.setSpellImage(game[propName]);
+            try {
+                ETA.timeRemainingWrapper(Skills[skillName], false);
+            } catch (e) {
+                ETA.error(e);
+            }
+        }
+
+        // gathering, only override startActionTimer
+        game.woodcutting.startActionTimer = () => ETA.startActionTimer('Woodcutting', 'woodcutting');
         game.mining.startActionTimer = () => {
             if (!game.mining.selectedRockActiveData.isRespawning) {
                 ETA.startActionTimer('Mining', 'mining');
             }
         }
-        game.woodcutting.startActionTimer = () => ETA.startActionTimer('Woodcutting', 'woodcutting');
-        game.herblore.startActionTimer = () => ETA.startActionTimer('Herblore', 'herblore');
-        game.altMagic.startActionTimer = () => ETA.startActionTimer('Magic', 'altMagic');
+        game.thieving.startActionTimer = () => {
+            if (!game.thieving.isStunned) {
+                ETA.startActionTimer('Thieving', 'thieving');
+            }
+        }
+        // production, override startActionTimer and selectXOnClick
+        game.firemaking.startActionTimer = () => ETA.startActionTimer('Firemaking', 'firemaking');
+        game.firemaking.selectLog = (recipeID) => ETA.selectRecipeOnClick('Firemaking', 'firemaking', recipeID);
         game.smithing.startActionTimer = () => ETA.startActionTimer('Smithing', 'smithing');
+        game.smithing.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Smithing', 'smithing', recipeID);
+        game.herblore.startActionTimer = () => ETA.startActionTimer('Herblore', 'herblore');
+        game.herblore.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Herblore', 'herblore', recipeID);
+        game.altMagic.startActionTimer = () => ETA.startActionTimer('Magic', 'altMagic');
+        game.altMagic.selectSpellOnClick = (recipeID) => ETA.selectSpellOnClick('Magic', 'altMagic', recipeID);
+        game.altMagic.selectItemOnClick = (recipeID) => ETA.selectItemOnClick('Magic', 'altMagic', recipeID);
+        game.altMagic.selectBarOnClick = (recipeID) => ETA.selectBarOnClick('Magic', 'altMagic', recipeID);
 
         // Create timeLeft containers
         ETA.makeProcessingDisplays();
@@ -2576,7 +2667,7 @@
             try {
                 ETA.timeRemainingWrapper(Skills.Agility, false);
             } catch (e) {
-                console.error(e);
+                ETA.error(e);
             }
         }
 
