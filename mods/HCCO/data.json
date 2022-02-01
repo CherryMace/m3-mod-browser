@@ -1,0 +1,13 @@
+{
+  "id": "hcco",
+  "title": "HCCO",
+  "authors": [
+    "Silber"
+  ],
+  "version": "0.2",
+  "targetGameVersion": "1.0.2",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/439024-melvor-idle-hcco",
+  "url": "https://greasyfork.org/en/scripts/439024-melvor-idle-hcco",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/HCCO/cache/hcco.js"
+}

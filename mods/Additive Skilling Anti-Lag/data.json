@@ -1,0 +1,13 @@
+{
+  "id": "additive_skilling_antilag",
+  "title": "Additive Skilling Anti-Lag",
+  "authors": [
+    "TinyCoyote"
+  ],
+  "version": "0.2.9",
+  "targetGameVersion": "1.0.2",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/430727-melvor-additive-skilling-anti-lag",
+  "url": "https://greasyfork.org/en/scripts/430727-melvor-additive-skilling-anti-lag",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Additive%20Skilling%20Anti-Lag/cache/anti-lag.js"
+}

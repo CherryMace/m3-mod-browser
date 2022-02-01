@@ -1,0 +1,13 @@
+{
+  "id": "autoeat",
+  "title": "AutoEat",
+  "authors": [
+    "Silber"
+  ],
+  "version": "0.1",
+  "targetGameVersion": "1.0.2",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/439292-melvor-idle-autoeat",
+  "url": "https://greasyfork.org/en/scripts/439292-melvor-idle-autoeat",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/AutoEat/cache/autoeat.js"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "change_game_mode",
+  "title": "Change Game Mode",
+  "authors": [
+    "Silber"
+  ],
+  "version": "0.1",
+  "targetGameVersion": "1.0.2",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/439077-melvor-idle-change-game-mode",
+  "url": "https://greasyfork.org/en/scripts/439077-melvor-idle-change-game-mode",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Change%20Game%20Mode/cache/change-game-mods.js"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "can_i_idle_helper",
+  "title": "Can I Idle Helper",
+  "authors": [
+    "Silber"
+  ],
+  "version": "0.1",
+  "targetGameVersion": "1.0.2",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/439183-melvor-idle-can-i-idle-helper",
+  "url": "https://greasyfork.org/en/scripts/439183-melvor-idle-can-i-idle-helper",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Can%20I%20Idle%20Helper/cache/ciih.js"
+}
