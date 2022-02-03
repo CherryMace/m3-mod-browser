@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.1.0
+// @version      1.1.2
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -553,7 +553,7 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         return true;
       };
     case "Firemaking":
-      actionID = items[itemID].firemakingID;
+      actionID = Firemaking.recipes.findIndex((x) => x.logID == itemID);
       return () => {
         if (skillLevel[CONSTANTS.skill.Firemaking] < Firemaking.recipes[actionID].levelRequired) return false;
         if (!game.firemaking.activeRecipe || game.firemaking.activeRecipe.logID !== actionID)
