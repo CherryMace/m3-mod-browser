@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.9.7
+// @version		0.10.0
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -380,108 +380,145 @@
                 + '</div>');
         }
 
-        ETA.makeProcessingDisplays = function () {
-            // smithing
-            let node = document.querySelector('[aria-labelledBy=Smithing-artisan-menu-recipe-select]').parentElement.parentElement.parentElement;
-            node.parentNode.insertBefore(tempContainer('timeLeftSmithing'), node.nextSibling);
-            // fletching
-            node = document.querySelector('[aria-labelledBy=Fletching-artisan-menu-recipe-select]').parentElement.parentElement.parentElement;
-            node.parentNode.insertBefore(tempContainer('timeLeftFletching'), node.nextSibling);
-            // Runecrafting
-            node = document.querySelector('[aria-labelledBy=Runecrafting-artisan-menu-recipe-select]').parentElement.parentElement.parentElement;
-            node.parentNode.insertBefore(tempContainer('timeLeftRunecrafting'), node.nextSibling);
-            // Crafting
-            node = document.querySelector('[aria-labelledBy=Crafting-artisan-menu-recipe-select]').parentElement.parentElement.parentElement;
-            node.parentNode.insertBefore(tempContainer('timeLeftCrafting'), node.nextSibling);
-            // Herblore
-            node = document.querySelector('[aria-labelledBy=Herblore-artisan-menu-recipe-select]').parentElement.parentElement.parentElement;
-            node.parentNode.insertBefore(tempContainer('timeLeftHerblore'), node.nextSibling);
-            // Cooking
-            for (let i = 0; i < 3; i++) {
-                node = document.getElementById(`cooking-menu-container`).children[i].firstChild.firstChild.firstChild.firstChild.children[4];
-                const newChild = html2Node(`<div class="col-12"/>`)
-                newChild.appendChild(tempContainer(`timeLeftCooking-${i}`));
-                node.parentNode.appendChild(newChild);
+        ETA.displays = {};
+
+        ETA.createDisplay = (skillID, index) => {
+            let displayID = `timeLeft${Skills[skillID]}`;
+            if (index !== undefined) {
+                displayID += `-${index}`;
             }
-            // Firemaking
-            node = document.getElementById('skill-fm-logs-selected-qty');
-            node = node.parentNode.parentNode.parentNode;
-            node.parentNode.insertBefore(tempContainer('timeLeftFiremaking'), node.nextSibling);
-            // Alt. Magic
-            node = document.getElementById('magic-screen-cast').children[0].children[1];
-            node.appendChild(tempContainer('timeLeftMagic'));
-            // Summoning
-            node = document.querySelector('[aria-labelledBy=Summoning-artisan-menu-recipe-select]').parentElement.parentElement.parentElement
-            if (node) {
-                node.parentNode.insertBefore(tempContainer('timeLeftSummoning'), node.nextSibling);
+            let display = document.getElementById(displayID);
+            if (display !== null) {
+                // display already exists
+                return display;
             }
+            ETA.displays[displayID] = true;
+            // standard processing container
+            if ([
+                Skills.Smithing,
+                Skills.Fletching,
+                Skills.Crafting,
+                Skills.Runecrafting,
+                Skills.Herblore,
+                Skills.Summoning
+            ].includes(skillID)) {
+                const node = document.querySelector(`[aria-labelledBy=${Skills[skillID]}-artisan-menu-recipe-select]`).parentElement.parentElement.parentElement
+                display = node.parentNode.insertBefore(tempContainer(displayID), node.nextSibling);
+                return display;
+            }
+            // other containers
+            let node = null;
+            switch (skillID) {
+                case Skills.Woodcutting:
+                    if (index === undefined) {
+                        node = document.getElementsByClassName('progress-bar bg-woodcutting')[0].parentNode;
+                        display = node.parentNode.insertBefore(tempContainer(displayID), node.nextSibling);
+                    } else {
+                        node = document.getElementsByClassName('progress-bar bg-woodcutting')[index + 1].parentNode;
+                        display = node.parentNode.insertBefore(tempContainer(displayID), node.nextSibling);
+                    }
+                    break;
+                case Skills.Fishing:
+                    node = document.getElementById('fishing-area-menu-container').children[1 + index].children[0].children[0].children[3].children[0].children[1].children[1];
+                    display = node.appendChild(tempContainer(displayID));
+                    break;
+                case Skills.Firemaking:
+                    node = document.getElementById('skill-fm-logs-selected-qty');
+                    node = node.parentNode.parentNode.parentNode;
+                    display = node.parentNode.insertBefore(tempContainer(displayID), node.nextSibling);
+                    break;
+                case Skills.Cooking:
+                    node = document.getElementById(`cooking-menu-container`).children[index].firstChild.firstChild.firstChild.firstChild.children[4];
+                    const newChild = html2Node(`<div class="col-12"/>`)
+                    newChild.appendChild(tempContainer(displayID));
+                    display = node.parentNode.appendChild(newChild);
+                    break;
+                case Skills.Mining:
+                    node = document.getElementById(`mining-ores-container`).children[(11 + index + 1) % 11].childNodes[1].childNodes[1].childNodes[1].childNodes[8];
+                    display = node.parentNode.insertBefore(tempContainer(displayID), node);
+                    break;
+                case Skills.Thieving:
+                    document.getElementById(`mastery-screen-skill-10-${index}`)
+                        .parentElement
+                        .parentElement
+                        .parentElement
+                        .parentElement
+                        .parentElement
+                        .parentElement
+                        .children[0]
+                        .appendChild(tempContainer(displayID));
+                    break;
+                case Skills.Agility:
+                    if (index === undefined) {
+                        document.getElementById('agility-breakdown-items').appendChild(tempContainer(displayID));
+                    } else {
+                        node = document.getElementById(`skill-content-container-20`).children[index].children[0].children[0].children[1].children[0];
+                        display = node.insertBefore(tempContainer(displayID), node.children[4]);
+                    }
+                    break;
+                case Skills.Astrology:
+                    node = document.getElementById(`astrology-container-content`).children[index];
+                    const wrapper = html2Node('<div class="col-12"></div>');
+                    node.parentNode.insertBefore(wrapper, node);
+                    display = wrapper.appendChild(tempContainer(displayID));
+                    break;
+                case Skills.Magic:
+                    node = document.getElementById('magic-screen-cast').children[0].children[1];
+                    display = node.appendChild(tempContainer('timeLeftMagic'));
+                    break;
+            }
+            return display;
         }
 
-        ETA.makeMiningDisplay = function () {
-            Mining.rockData.forEach((_, i) => {
-                const node = document.getElementById(`mining-ores-container`).children[i].childNodes[1].childNodes[1].childNodes[1].children[7];
-                node.parentNode.insertBefore(tempContainer(`timeLeftMining-${(10 + i) % 11}`), node);
-            });
-        }
-
-        ETA.makeThievingDisplay = function () {
-            Thieving.npcs.forEach(npc => {
-                document.getElementById(`mastery-screen-skill-10-${npc.id}`)
-                    .parentElement
-                    .parentElement
-                    .parentElement
-                    .parentElement
-                    .parentElement
-                    .parentElement
-                    .children[0]
-                    .appendChild(tempContainer(`timeLeftThieving-${npc.id}`));
-            });
-        }
-
-        ETA.makeWoodcuttingDisplay = function () {
-            const els = document.getElementsByClassName('progress-bar bg-woodcutting');
+        ETA.createAllDisplays = function () {
             Woodcutting.trees.forEach((_, i) => {
-                const node = els[i + 1].parentNode;
-                node.parentNode.insertBefore(tempContainer(`timeLeftWoodcutting-${i}`), node.nextSibling);
+                ETA.createDisplay(Skills.Woodcutting, i);
             });
-            const node = els[0].parentNode;
-            node.parentNode.insertBefore(tempContainer('timeLeftWoodcutting-Secondary'), node.nextSibling);
-        }
-
-        ETA.makeFishingDisplay = function () {
-            fishingAreas.forEach((_, i) => {
-                const node = document.getElementById(`fishing-area-${i}-selected-fish-xp`);
-                node.parentNode.insertBefore(tempContainer(`timeLeftFishing-${i}`), node.nextSibling);
+            ETA.createDisplay(Skills.Woodcutting);
+            Fishing.areas.forEach((_, i) => {
+                ETA.createDisplay(Skills.Fishing, i);
             });
-        }
-
-        ETA.makeAgilityDisplay = function () {
-            chosenAgilityObstacles.forEach(i => {
-                if (i === -1) {
-                    return;
-                }
-                if (document.getElementById(`timeLeftAgility-${i}`)) {
-                    // element already exists
-                    return;
-                }
-                let node = document.getElementById(`agility-obstacle-${i}`);
-                node = node.children[0].children[0].children[0];
-                node.insertBefore(tempContainer(`timeLeftAgility-${i}`), node.children[3]);
-            });
-            if (document.getElementById('timeLeftAgility-Secondary')) {
-                // element already exists
-                return;
+            ETA.createDisplay(Skills.Firemaking);
+            for (let i = 0; i < 3; i++) {
+                ETA.createDisplay(Skills.Cooking, i);
             }
-            document.getElementById('agility-breakdown-items').appendChild(tempContainer('timeLeftAgility-Secondary'));
+            Mining.rockData.forEach((_, i) => {
+                ETA.createDisplay(Skills.Mining, i);
+            });
+            ETA.createDisplay(Skills.Smithing);
+            Thieving.npcs.forEach(npc => {
+                ETA.createDisplay(Skills.Thieving, npc.id);
+            });
+            ETA.createDisplay(Skills.Fletching);
+            ETA.createDisplay(Skills.Crafting);
+            ETA.createDisplay(Skills.Runecrafting);
+            ETA.createDisplay(Skills.Herblore);
+            game.agility.builtObstacles.forEach(obstacle => {
+                ETA.createDisplay(Skills.Agility, obstacle.category);
+            });
+            ETA.createDisplay(Skills.Agility);
+            ETA.createDisplay(Skills.Summoning);
+            Astrology.constellations.forEach((_, i) => {
+                ETA.createDisplay(Skills.Astrology, i);
+            });
+            ETA.createDisplay(Skills.Magic);
         }
 
-        ETA.makeAstrologyDisplay = function () {
-            ASTROLOGY.forEach((_, i) => {
-                const node = document.getElementById(`astrology-buttons-${i}`);
-                const wrapper = html2Node('<div class="col-12"></div>');
-                node.parentNode.insertBefore(wrapper, node);
-                wrapper.appendChild(tempContainer(`timeLeftAstrology-${i}`));
-            });
+        ETA.removeAllDisplays = () => {
+            for (const displayID in ETA.displays) {
+                let display = document.getElementById(displayID);
+                let counter = 0;
+                while (display !== null) {
+                    display.remove();
+                    display = document.getElementById(displayID);
+                    counter++;
+                    if (counter === 10) {
+                        ETA.error(`Error removing element with id ${displayID}`);
+                        break;
+                    }
+                }
+            }
+            ETA.displays = {};
         }
 
         ////////////////
@@ -527,7 +564,7 @@
                     }
                     break;
                 case Skills.Summoning:
-                    if (selectedSummon === null) {
+                    if (game.herblore.selectedRecipeID === -1) {
                         return;
                     }
                     break;
@@ -557,7 +594,7 @@
                     break;
 
                 case Skills.Fishing:
-                    data = fishingAreas;
+                    data = Fishing.areas;
                     break;
 
                 case Skills.Agility:
@@ -585,10 +622,11 @@
                         }
                         let initial = initialVariables(skillID, checkTaskComplete);
                         if (initial.skillID === Skills.Fishing) {
-                            initial.fishID = selectedFish[i];
-                            if (initial.fishID === null) {
+                            initial.fish = game.fishing.selectedAreaFish.get(Fishing.areas[i]);
+                            if (initial.fish === undefined) {
                                 return;
                             }
+                            initial.areaID = i;
                         }
                         initial.currentAction = i;
                         if (initial.skillID === Skills.Agility) {
@@ -627,6 +665,18 @@
         function productionWrapper(skillID, checkTaskComplete) {
             // production skills
             let initial = initialVariables(skillID, checkTaskComplete);
+            if (skillID === Skills.Cooking) {
+                game.cooking.selectedRecipes.forEach((recipe, i) => {
+                    if (recipe === undefined) {
+                        return;
+                    }
+                    let initial = initialVariables(skillID, checkTaskComplete);
+                    initial.recipe = recipe;
+                    initial.currentAction = recipe.masteryID;
+                    initial.cookingCategory = i;
+                    asyncTimeRemaining(initial);
+                });
+            }
             switch (initial.skillID) {
                 case Skills.Smithing:
                     initial.currentAction = game.smithing.selectedRecipeID;
@@ -643,9 +693,6 @@
                 case Skills.Herblore:
                     initial.currentAction = game.herblore.selectedRecipeID;
                     break;
-                case Skills.Cooking:
-                    initial.data = selectedCookingRecipe;
-                    break;
                 case Skills.Firemaking:
                     initial.currentAction = game.firemaking.selectedRecipeID;
                     break;
@@ -653,24 +700,13 @@
                     initial.currentAction = game.altMagic.selectedSpellID;
                     break;
                 case Skills.Summoning:
-                    initial.currentAction = selectedSummon;
+                    initial.currentAction = game.summoning.selectedRecipeID;
             }
-            if (initial.currentAction === undefined && initial.data === undefined) {
+            if (initial.currentAction === undefined) {
                 return;
             }
-            if (initial.data === undefined) {
-                asyncTimeRemaining(initial);
-                return;
-            }
-            initial.data.forEach((x, i) => {
-                if (x === -1) {
-                    return;
-                }
-                let initial = initialVariables(skillID, checkTaskComplete);
-                initial.currentAction = x;
-                initial.cookingCategory = i;
-                asyncTimeRemaining(initial);
-            });
+            asyncTimeRemaining(initial);
+
         }
 
         function asyncTimeRemaining(initial) {
@@ -1305,12 +1341,11 @@
         }
 
         function configureCooking(initial) {
-            const item = items[initial.currentAction];
-            initial.itemID = item.id;
-            initial.masteryID = item.masteryID[1];
-            initial.itemXp = item.cookingXP;
-            initial.skillInterval = item.cookingInterval;
-            initial.skillReq = items[initial.itemID].recipeRequirements[0];
+            initial.itemID = initial.recipe.id;
+            initial.masteryID = initial.recipe.masteryID;
+            initial.itemXp = initial.recipe.baseXP;
+            initial.skillInterval = initial.recipe.baseInterval;
+            initial.skillReq = initial.recipe.itemCosts;
             initial.masteryLimLevel = [99, Infinity]; //Cooking has no Mastery bonus
             return initial;
         }
@@ -1325,25 +1360,21 @@
         }
 
         function configureSummoning(initial) {
-            initial.itemID = summoningItems[initial.currentAction].itemID;
-            initial.itemXp = getBaseSummoningXP(initial.currentAction);
-            initial.useTabletXp = getBaseSummoningXP(initial.currentAction, true);
-            initial.skillInterval = 5000;
-            initial.recipeID = summoningData.defaultRecipe[items[initial.itemID].masteryID[1]];
+            initial.recipe = Summoning.marks[initial.currentAction];
+            initial.altRecipeID = game.summoning.setAltRecipes.get(initial.recipe);
+            initial.itemID = initial.recipe.itemID;
+            initial.itemXp = initial.recipe.baseXP;
+            initial.useTabletXp = Summoning.getTabletConsumptionXP(initial.currentAction, true);
+            initial.skillInterval = game.summoning.baseInterval;
             // costs can change with increasing pool / mastery
-            initial.skillReq = items[initial.itemID].summoningReq[initial.recipeID].map((r, i) => {
-                return {
-                    id: r.id,
-                    qty: getSummoningRecipeQty(initial.itemID, initial.recipeID, i),
-                };
-            });
+            initial.skillReq = calcSummoningRecipeQty(initial, 0, 1);
             // add xp of owned tablets to initial xp
             if (ETASettings.USE_TABLETS) {
                 const qty = getQtyOfItem(initial.itemID);
                 initial.skillXp += qty * initial.useTabletXp;
                 initial.targetSkillReached = initial.skillXp >= initial.targetXp;
             }
-            initial.chanceToDouble = calculateChanceToDouble(Skills.Summoning, false, 0, 0, items[initial.itemID]);
+            initial.chanceToDouble = game.summoning.actionDoublingChance;
             return initial;
         }
 
@@ -1421,16 +1452,15 @@
         }
 
         function configureFishing(initial) {
-            initial.itemID = fishingItems[fishingAreas[initial.currentAction].fish[initial.fishID]].itemID;
-            initial.itemXp = items[initial.itemID].fishingXP;
+            initial.itemID = initial.fish.itemID;
+            initial.itemXp = initial.fish.baseXP;
             // base avg interval
             let avgRoll = 0.5;
-            const max = items[initial.itemID].maxFishingInterval;
-            const min = items[initial.itemID].minFishingInterval;
+            const max = initial.fish.baseMaxInterval;
+            const min = initial.fish.baseMinInterval;
             initial.skillInterval = Math.floor(avgRoll * (max - min)) + min;
+            initial.currentAction = initial.fish.masteryID;
             initial = configureGathering(initial);
-            // correctly set masteryID
-            initial.masteryID = fishingAreas[initial.currentAction].fish[initial.fishID];
             return initial
         }
 
@@ -1457,50 +1487,77 @@
             return configureGathering(initial);
         }
 
-        function calcSummoningRecipeQty(initial, poolXp, recipeItemIndex, masteryLevel) {
-            const recipe = items[initial.itemID].summoningReq[initial.recipeID][recipeItemIndex];
-            const recipeGPCostReduction = Math.floor(masteryLevel / 10);
-            const recipeGPCost = SUMMONING.Settings.recipeGPCost * (1 - (recipeGPCostReduction * 5) / 100);
-
-            // gp cost or sc cost
-            if (recipe.id === -4 || recipe.id === -5) {
-                return {
-                    id: recipe.id,
-                    qty: Math.max(1, recipeGPCost),
-                };
-            }
-
-            // non-shard item cost
-            if (items[recipe.id].type !== undefined && items[recipe.id].type !== "Shard") {
-                const itemCost = Math.max(20, items[recipe.id].sellsFor);
-                return {
-                    id: recipe.id,
-                    qty: Math.max(1, Math.floor(recipeGPCost / itemCost)),
-                };
-            }
-
-            // shard cost
-            let qty = recipe.qty;
-            // shard cost
+        function calcShardReduction(initial, poolXp, masteryLevel) {
+            let shardReduction = 0;
             // mastery shard reduction
             if (masteryLevel >= 50) {
-                qty--;
+                shardReduction++;
             }
             if (masteryLevel >= 99) {
-                qty--;
+                shardReduction++;
             }
             // pool shard reduction
             if (poolReached(initial, poolXp, 1) && items[initial.itemID].summoningTier <= 2) {
-                qty--;
+                shardReduction++;
             } else if (poolReached(initial, poolXp, 3) && items[initial.itemID].summoningTier === 3) {
-                qty--;
+                shardReduction++;
             }
             // modifier shard reduction
-            qty -= player.modifiers.decreasedSummoningShardCost - player.modifiers.increasedSummoningShardCost;
-            return {
-                id: recipe.id,
-                qty: Math.max(1, qty),
-            };
+            shardReduction += player.modifiers.decreasedSummoningShardCost - player.modifiers.increasedSummoningShardCost;
+            return shardReduction;
+        }
+
+        function calcSummoningRecipeQtyMap(initial, poolXp, masteryLevel) {
+            const map = {};
+            calcSummoningRecipeQty(initial, poolXp, masteryLevel).forEach(x => map[x.id] = x.qty);
+            return map;
+        }
+        function calcSummoningRecipeQty(initial, poolXp, masteryLevel) {
+            // shard costs
+            const shardReduction = calcShardReduction(initial, poolXp, masteryLevel);
+            const recipe = initial.recipe.itemCosts.map(x=> {
+                return {
+                    id:x.id,
+                    qty: Math.max(1, x.qty - shardReduction),
+                }
+            });
+
+            // cost multiplier
+            let nonShardCostReduction = 0;
+            // Non-Shard Cost reduction that scales with mastery level
+            nonShardCostReduction += Math.floor(masteryLevel / 10) * 5;
+            // Level 99 Mastery: +5% Non Shard Cost Reduction
+            if (masteryLevel >= 99) {
+                nonShardCostReduction += 5;
+            }
+            const costMultiplier = 1 - nonShardCostReduction / 100;
+
+            // currency cost
+            if (initial.recipe.gpCost > 0) {
+                recipe.push({
+                    id: -5,
+                    qty: Math.max(initial.recipe.gpCost * costMultiplier),
+                });
+            }
+            if (initial.recipe.scCost > 0) {
+                recipe.push({
+                    id: -4,
+                    qty: Math.max(initial.recipe.scCost * costMultiplier),
+                });
+            }
+
+            // non-shard item cost
+            if (initial.recipe.nonShardItemCosts.length > 0) {
+                const itemID = initial.recipe.nonShardItemCosts[initial.altRecipeID ?? 0];
+                const itemCost = Math.max(20, items[itemID].sellsFor);
+                recipe.push({
+                    id: itemID,
+                    qty: Math.max(1, Math.floor(Summoning.recipeGPCost * costMultiplier / itemCost)),
+                });
+            }
+
+            // return all costs
+            return recipe;
         }
 
         function calcSummoningTabletQty(initial, poolXp, masteryLevel) {
@@ -1600,7 +1657,7 @@
         // calculate junk chance
         function calcJunkChance(initial, masteryXp, poolXp) {
             // base
-            let junkChance = fishingAreas[initial.currentAction].junkChance;
+            let junkChance = Fishing.areas[initial.areaID].junkChance;
             // mastery turns 3% junk in 3% special
             let masteryLevel = convertXpToLvl(masteryXp);
             if (masteryLevel >= 50) {
@@ -1740,11 +1797,7 @@
             // update summoning costs
             if (initial.skillID === Skills.Summoning) {
                 const masteryLevel = convertXpToLvl(current.actions[0].masteryXp);
-                initial.skillReq.map((_, i) =>
-                    calcSummoningRecipeQty(initial, current.poolXp, i, masteryLevel)
-                ).forEach(x => {
-                    current.skillReqMap[x.id] = x.qty;
-                })
+                current.skillReqMap = calcSummoningRecipeQtyMap(initial, current.poolXp, masteryLevel);
             }
             // estimate actions remaining with current resources
             if (!noResources) {
@@ -2253,31 +2306,18 @@
             }
         }
 
-        function injectHTML(initial, results, msLeft, now, initialRun = true) {
-            let timeLeftElementId = `timeLeft${Skills[initial.skillID]}`;
-            if (initial.actions.length > 1) {
-                timeLeftElementId += "-Secondary";
-            } else if (initial.isGathering) {
-                timeLeftElementId += "-" + initial.currentAction;
-            } else if (initial.cookingCategory !== undefined) {
-                timeLeftElementId += "-" + initial.cookingCategory;
-            }
-            const timeLeftElement = document.getElementById(timeLeftElementId);
-            if (timeLeftElement === null) {
-                switch (initial.skillID) {
-                    case Skills.Thieving:
-                        ETA.makeThievingDisplay();
-                        break;
-                    case Skills.Agility:
-                        ETA.makeAgilityDisplay();
-                        break;
+        function injectHTML(initial, results, msLeft, now) {
+            let index = undefined;
+            if (initial.actions.length === 1) {
+                if (initial.skillID === Skills.Fishing) {
+                    index = initial.areaID;
+                } else if (initial.isGathering) {
+                    index = initial.currentAction;
+                } else if (initial.cookingCategory !== undefined) {
+                    index = initial.cookingCategory;
                 }
-                if (initialRun) {
-                    // try running the method again
-                    return injectHTML(initial, results, msLeft, now, false);
-                }
-                return null;
             }
+            const timeLeftElement = ETA.createDisplay(initial.skillID, index);
             let finishedTime = addMSToDate(now, msLeft);
             timeLeftElement.textContent = "";
             if (ETASettings.SHOW_XP_RATE) {
@@ -2303,7 +2343,7 @@
             if (initial.actions.length === 1 && (initial.isGathering || initial.skillID === Skills.Cooking)) {
                 const itemID = initial.actions[0].itemID;
                 if (itemID !== undefined) {
-                    const youHaveElementId = timeLeftElementId + "-YouHave";
+                    const youHaveElementId = timeLeftElement.id + "-YouHave";
                     const perfectID = items[itemID].perfectItem;
                     $("#" + youHaveElementId).replaceWith(''
                         + `<small id="${youHaveElementId}">`
@@ -2625,8 +2665,44 @@
             }
         }
 
+        ETA.onRecipeSelectionClick = (skillName, propName, recipe) => {
+            const category = recipe.category;
+            const existingRecipe = game[propName].selectedRecipes.get(category);
+            if (game[propName].isActive) {
+                if (category === game[propName].activeCookingCategory && recipe !== game[propName].activeRecipe)
+                    game[propName].stop();
+                else if (game[propName].passiveCookTimers.has(category) && recipe !== existingRecipe)
+                    game[propName].stopPassiveCooking(category);
+            }
+            game[propName].selectedRecipes.set(category, recipe);
+            game[propName].renderQueue.selectedRecipes.add(category);
+            game[propName].renderQueue.recipeRates = true;
+            game[propName].renderQueue.quantities = true;
+            game[propName].render();
+            try {
+                ETA.timeRemainingWrapper(Skills[skillName], false);
+            } catch (e) {
+                ETA.error(e);
+            }
+        }
+
+        ETA.selectAltRecipeOnClick = (skillName, propName, altID) => {
+            if (altID !== game[propName].selectedAltRecipe && game[propName].isActive) {
+                game[propName].stop();
+            }
+            game[propName].setAltRecipes.set(game[propName].selectedRecipe, altID);
+            game[propName].renderQueue.selectedRecipe = true;
+            game[propName].render();
+            try {
+                ETA.timeRemainingWrapper(Skills[skillName], false);
+            } catch (e) {
+                ETA.error(e);
+            }
+        }
+
         // gathering, only override startActionTimer
         game.woodcutting.startActionTimer = () => ETA.startActionTimer('Woodcutting', 'woodcutting');
+        game.fishing.startActionTimer = () => ETA.startActionTimer('Fishing', 'fishing');
         game.mining.startActionTimer = () => {
             if (!game.mining.selectedRockActiveData.isRespawning) {
                 ETA.startActionTimer('Mining', 'mining');
@@ -2640,36 +2716,22 @@
         // production, override startActionTimer and selectXOnClick
         game.firemaking.startActionTimer = () => ETA.startActionTimer('Firemaking', 'firemaking');
         game.firemaking.selectLog = (recipeID) => ETA.selectLog('Firemaking', 'firemaking', recipeID);
+        game.cooking.startActionTimer = () => ETA.startActionTimer('Cooking', 'cooking');
+        game.cooking.onRecipeSelectionClick = (recipe) => ETA.onRecipeSelectionClick('Cooking', 'cooking', recipe);
         game.smithing.startActionTimer = () => ETA.startActionTimer('Smithing', 'smithing');
         game.smithing.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Smithing', 'smithing', recipeID);
         game.herblore.startActionTimer = () => ETA.startActionTimer('Herblore', 'herblore');
         game.herblore.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Herblore', 'herblore', recipeID);
+        game.summoning.startActionTimer = () => ETA.startActionTimer('Summoning', 'summoning');
+        game.summoning.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Summoning', 'summoning', recipeID);
+        game.summoning.selectAltRecipeOnClick = (altID) => ETA.selectAltRecipeOnClick('Summoning', 'summoning', altID);
         game.altMagic.startActionTimer = () => ETA.startActionTimer('Magic', 'altMagic');
         game.altMagic.selectSpellOnClick = (recipeID) => ETA.selectSpellOnClick('Magic', 'altMagic', recipeID);
         game.altMagic.selectItemOnClick = (recipeID) => ETA.selectItemOnClick('Magic', 'altMagic', recipeID);
         game.altMagic.selectBarOnClick = (recipeID) => ETA.selectBarOnClick('Magic', 'altMagic', recipeID);
 
         // Create timeLeft containers
-        ETA.makeProcessingDisplays();
-        ETA.makeMiningDisplay();
-        ETA.makeThievingDisplay();
-        ETA.makeWoodcuttingDisplay();
-        ETA.makeFishingDisplay();
-        ETA.makeAgilityDisplay();
-        ETA.makeAstrologyDisplay();
-
-        // remake Agility display after loading the Agility Obstacles
-        ETA.loadAgilityRef = loadAgility;
-        loadAgility = (...args) => {
-            ETA.loadAgilityRef(...args);
-            ETA.log('Remaking Agility display');
-            ETA.makeAgilityDisplay();
-            try {
-                ETA.timeRemainingWrapper(Skills.Agility, false);
-            } catch (e) {
-                ETA.error(e);
-            }
-        }
+        ETA.createAllDisplays();
 
         // Mastery Pool progress
         for (let id in SKILLS) {
