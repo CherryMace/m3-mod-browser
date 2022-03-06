@@ -1,28 +1,28 @@
 // ==UserScript==
 // @name        Melvor Equipment Menu
 // @namespace   http://tampermonkey.net/
-// @version     0.1.3
+// @version     0.1.5
 // @description Adds an equipment menu to equipment slots on Combat page and top bar, forked from Melvor Equipment Menu by NotCorgan#1234
 // @author		GMiclotte
 // @include		https://melvoridle.com/*
 // @include		https://*.melvoridle.com/*
 // @exclude		https://melvoridle.com/index.php
 // @exclude		https://*.melvoridle.com/index.php
-// @exclude		https://wiki.melvoridle.com*
-// @exclude		https://*.wiki.melvoridle.com*
+// @exclude		https://wiki.melvoridle.com/*
+// @exclude		https://*.wiki.melvoridle.com/*
 // @inject-into page
 // @noframes
 // @grant		none
 // ==/UserScript==
-    
+
 // Made for version 0.22
-    
+
 ((main) => {
     const script = document.createElement('script');
     script.textContent = `try { (${main})(); } catch (e) { console.log(e); }`;
     document.body.appendChild(script).parentNode.removeChild(script);
 })(() => {
-    
+
     // Loading script
     function generateTooltip(item, isPassive = false) {
         let itemStat = "";
@@ -86,13 +86,13 @@
         */
         return '<div class="text-center"><span class="text-warning">' + item.name + "</span><small class='text-success'>" + itemStat + "</small></div>";
     }
-    
+
     const showEquipment = function (slot, instance, event) {
         if (game.isGolbinRaid) {
             return;
         }
         event.preventDefault();
-    
+
         instance.setProps({
             getReferenceClientRect: () => ({
                 width: 0,
@@ -103,9 +103,9 @@
                 right: event.clientX,
             }),
         });
-    
+
         const possibleEquipment = bank.filter(e => items[e.id].validSlots?.includes(slot));
-    
+
         let content = document.createElement('div');
         content.className = 'content-side';
         content.style.setProperty('padding-top', '.25rem', 'important');
@@ -141,7 +141,7 @@
                 interactive: false,
                 animation: false,
             });
-    
+
             let img = document.createElement('img');
             img.className = 'nav-img';
             img.src = equippableItem.media;
@@ -162,16 +162,15 @@
             ul.appendChild(li);
         }
         instance.setContent(content);
-    
+
         instance.show();
     }
-    
+
     function startEquipmentMenu() {
         for (const slot in equipmentSlotData) {
             const equipmentSlot = document.getElementById(`combat-equipment-slot-${EquipmentSlots[slot]}-0`);
             const equipmentSlotTop = document.getElementById(`combat-equipment-slot-${EquipmentSlots[slot]}-1`);
-            console.log(slot, equipmentSlot, equipmentSlotTop)
-    
+
             let instance = tippy(equipmentSlot, {
                 placement: 'right-start',
                 trigger: 'manual',
@@ -180,7 +179,7 @@
                 allowHTML: true,
                 offset: [0, 0],
             });
-    
+
             let instanceTop = tippy(equipmentSlotTop, {
                 placement: 'left-start',
                 trigger: 'manual',
@@ -189,13 +188,13 @@
                 allowHTML: true,
                 offset: [0, 0],
             });
-    
+
             equipmentSlot.addEventListener('contextmenu', showEquipment.bind(equipmentSlot, slot, instance));
             equipmentSlotTop.addEventListener('contextmenu', showEquipment.bind(equipmentSlotTop, slot, instanceTop));
         }
         console.log('Melvor Equipment Menu Loaded');
     }
-    
+
     function loadScript() {
         if (typeof isLoaded !== typeof undefined && isLoaded) {
             // Only load script after game has opened
@@ -203,7 +202,6 @@
             startEquipmentMenu();
         }
     }
-    
+
     const scriptLoader = setInterval(loadScript, 200);
 });
-

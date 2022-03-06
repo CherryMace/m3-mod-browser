@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.10.0
+// @version		0.11.1
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -372,11 +372,8 @@
         const tempContainer = (id) => {
             return html2Node(''
                 + '<div class="font-size-base font-w600 text-center text-muted">'
-                + `	<small id ="${id}" class="mb-2" style="display:block;clear:both;white-space:pre-line" data-toggle="tooltip" data-placement="top" data-html="true" title="" data-original-title="">`
-                + '	</small>'
-                + `	<small id ="${id}" class="mb-2" style="display:block;clear:both;white-space:pre-line">`
-                + `<div id="${id + '-YouHave'}"/>`
-                + '	</small>'
+                + `	<small id ="${id}" class="mb-2" style="display:block;clear:both;white-space:pre-line" data-toggle="tooltip" data-placement="top" data-html="true" title="" data-original-title=""></small>`
+                + `	<small id="${id + '-YouHave'}"class="mb-2" style="display:block;clear:both;white-space:pre-line"></small>`
                 + '</div>');
         }
 
@@ -387,12 +384,12 @@
             if (index !== undefined) {
                 displayID += `-${index}`;
             }
+            ETA.displays[displayID] = true;
             let display = document.getElementById(displayID);
             if (display !== null) {
                 // display already exists
                 return display;
             }
-            ETA.displays[displayID] = true;
             // standard processing container
             if ([
                 Skills.Smithing,
@@ -457,8 +454,10 @@
                     }
                     break;
                 case Skills.Astrology:
-                    node = document.getElementById(`astrology-container-content`).children[index];
-                    const wrapper = html2Node('<div class="col-12"></div>');
+                    node = document.getElementById(`astrology-container-content`).children[index].children[0].children[0].children[5];
+                    const wrapperID = `${displayID}Wrapper`;
+                    ETA.displays[wrapperID] = false;
+                    const wrapper = html2Node(`<div class="col-12" id="${wrapperID}"></div>`);
                     node.parentNode.insertBefore(wrapper, node);
                     display = wrapper.appendChild(tempContainer(displayID));
                     break;
@@ -506,16 +505,10 @@
 
         ETA.removeAllDisplays = () => {
             for (const displayID in ETA.displays) {
-                let display = document.getElementById(displayID);
-                let counter = 0;
-                while (display !== null) {
-                    display.remove();
-                    display = document.getElementById(displayID);
-                    counter++;
-                    if (counter === 10) {
-                        ETA.error(`Error removing element with id ${displayID}`);
-                        break;
-                    }
+                if (ETA.displays[displayID]) {
+                    document.getElementById(displayID).parentNode.remove();
+                } else {
+                    document.getElementById(displayID).remove();
                 }
             }
             ETA.displays = {};
@@ -539,17 +532,17 @@
                     }
                     break;
                 case Skills.Fletching:
-                    if (selectedFletch === null) {
+                    if (game.fletching.selectedRecipeID === -1) {
                         return;
                     }
                     break;
                 case Skills.Crafting:
-                    if (selectedCraft === null) {
+                    if (game.crafting.selectedRecipeID === -1) {
                         return;
                     }
                     break;
                 case Skills.Runecrafting:
-                    if (selectedRunecraft === null) {
+                    if (game.runecrafting.selectedRecipeID === -1) {
                         return;
                     }
                     break;
@@ -600,16 +593,17 @@
                 case Skills.Agility:
                     data = [];
                     // only keep active chosen obstacles
-                    for (const x of chosenAgilityObstacles) {
-                        if (x >= 0) {
-                            data.push(x);
+                    for (let category = 0; category < 10; category++) {
+                        const obstacle = game.agility.builtObstacles.get(category);
+                        if (obstacle !== undefined) {
+                            data.push(obstacle.id);
                         } else {
                             break;
                         }
                     }
                     break;
                 case Skills.Astrology:
-                    data = ASTROLOGY;
+                    data = Astrology.constellations;
                     break;
             }
             if (data.length > 0) {
@@ -647,7 +641,10 @@
                         asyncTimeRemaining(initial);
                     } else {
                         // wipe the display, there's no way of knowing which tree is being cut
-                        document.getElementById(`timeLeft${Skills[skillID]}-Secondary`).textContent = '';
+                        const node = document.getElementById(`timeLeft${Skills[skillID]}`);
+                        if (node) {
+                            node.textContent = '';
+                        }
                     }
                 }
                 if (skillID === Skills.Agility) {
@@ -682,13 +679,13 @@
                     initial.currentAction = game.smithing.selectedRecipeID;
                     break;
                 case Skills.Fletching:
-                    initial.currentAction = selectedFletch;
+                    initial.currentAction = game.fletching.selectedRecipeID;
                     break;
                 case Skills.Runecrafting:
-                    initial.currentAction = selectedRunecraft;
+                    initial.currentAction = game.runecrafting.selectedRecipeID;
                     break;
                 case Skills.Crafting:
-                    initial.currentAction = selectedCraft;
+                    initial.currentAction = game.crafting.selectedRecipeID;
                     break;
                 case Skills.Herblore:
                     initial.currentAction = game.herblore.selectedRecipeID;
@@ -937,7 +934,7 @@
                     if (poolReached(initial, poolXp, 1)) {
                         preservationChance += 5;
                     }
-                    if (craftingJewelleryIDs.includes(itemID)) {
+                    if (initial.recipe.category === CraftingCategory.Necklaces || initial.recipe.category === CraftingCategory.Rings) {
                         preservationChance += player.modifiers.summoningSynergy_16_17;
                     }
                     break;
@@ -1285,27 +1282,26 @@
         }
 
         function configureFletching(initial) {
-            initial.itemID = fletchingItems[initial.currentAction].itemID;
-            initial.itemXp = items[initial.itemID].fletchingXP;
-            initial.skillInterval = 2000;
-            for (let i of items[initial.itemID].fletchReq) {
-                initial.skillReq.push(i);
+            initial.recipe = Fletching.recipes[initial.currentAction];
+            initial.itemID = initial.recipe.itemID;
+            initial.itemXp = initial.recipe.baseXP;
+            initial.skillInterval = game.fletching.baseInterval;
+            let costs = initial.recipe.itemCosts;
+            if (initial.recipe.alternativeCosts !== undefined) {
+                costs = initial.recipe.alternativeCosts[game.fletching.selectedAltRecipe].itemCosts;
             }
-            //Special Case for Arrow Shafts
-            if (initial.itemID === Items.Arrow_Shafts) {
-                if (selectedFletchLog === undefined) {
-                    selectedFletchLog = 0;
-                }
-                initial.skillReq = [initial.skillReq[selectedFletchLog]];
+            for (let i of costs) {
+                initial.skillReq.push(i);
             }
             return initial;
         }
 
         function configureRunecrafting(initial) {
-            initial.itemID = runecraftingItems[initial.currentAction].itemID;
-            initial.itemXp = items[initial.itemID].runecraftingXP;
-            initial.skillInterval = 2000;
-            for (let i of items[initial.itemID].runecraftReq) {
+            initial.recipe = Runecrafting.recipes[initial.currentAction];
+            initial.itemID = initial.recipe.itemID;
+            initial.itemXp = initial.recipe.baseXP;
+            initial.skillInterval = game.runecrafting.baseInterval;
+            for (let i of initial.recipe.itemCosts) {
                 initial.skillReq.push(i);
             }
             initial.masteryLimLevel = [99, Infinity]; // Runecrafting has no Mastery bonus
@@ -1313,10 +1309,11 @@
         }
 
         function configureCrafting(initial) {
-            initial.itemID = craftingItems[initial.currentAction].itemID;
-            initial.itemXp = items[initial.itemID].craftingXP;
-            initial.skillInterval = 3000;
-            items[initial.itemID].craftReq.forEach(i => {
+            initial.recipe = Crafting.recipes[initial.currentAction];
+            initial.itemID = initial.recipe.itemID;
+            initial.itemXp = initial.recipe.baseXP;
+            initial.skillInterval = game.crafting.baseInterval;
+            for (let i of initial.recipe.itemCosts) {
                 let qty = i.qty;
                 if (items[initial.itemID].category === "Combat" && items[initial.itemID].tier === "Dragonhide" && qty > 1) {
                     qty -= player.modifiers.summoningSynergy_9_16;
@@ -1325,7 +1322,7 @@
                     ...i,
                     qty: qty,
                 });
-            });
+            };
             return initial;
         }
 
@@ -1467,8 +1464,8 @@
         function configureAgility(initial) {
             const agiAction = x => {
                 return {
-                    itemXp: agilityObstacles[x].completionBonuses.xp,
-                    skillInterval: agilityObstacles[x].interval,
+                    itemXp: Agility.obstacles[x].completionBonuses.xp,
+                    skillInterval: Agility.obstacles[x].interval,
                     masteryID: x,
                 };
             }
@@ -1482,8 +1479,8 @@
 
         function configureAstrology(initial) {
             initial.itemID = undefined;
-            initial.itemXp = ASTROLOGY[initial.currentAction].provides.xp;
-            initial.skillInterval = AstrologyDefaults.interval;
+            initial.itemXp = Astrology.constellations[initial.currentAction].provides.xp;
+            initial.skillInterval = Astrology.baseInterval;
             return configureGathering(initial);
         }
 
@@ -1535,13 +1532,13 @@
             // currency cost
             if (initial.recipe.gpCost > 0) {
                 recipe.push({
-                    id: -5,
+                    id: -4,
                     qty: Math.max(initial.recipe.gpCost * costMultiplier),
                 });
             }
             if (initial.recipe.scCost > 0) {
                 recipe.push({
-                    id: -4,
+                    id: -5,
                     qty: Math.max(initial.recipe.scCost * costMultiplier),
                 });
             }
@@ -1929,7 +1926,7 @@
                 return;
             }
             // check if we need to halve one of the debuffs
-            const m = agilityObstacles[id].modifiers;
+            const m = Agility.obstacles[id].modifiers;
             // xp
             initial.staticXpBonus += getBuff(m, 'decreasedGlobalSkillXP', 'decreasedSkillXP') / 100 / 2;
             // mxp
@@ -2144,7 +2141,7 @@
                     const poolXp = MASTERY[initial.skillID].pool;
                     initial.agilityObstacles.forEach(x => {
                         const masteryXp = MASTERY[initial.skillID].xp[x];
-                        const interval = agilityObstacles[x].interval;
+                        const interval = Agility.obstacles[x].interval;
                         initial.agiLapTime += intervalAdjustment(initial, poolXp, masteryXp, interval);
                     });
                 }
@@ -2311,6 +2308,8 @@
             if (initial.actions.length === 1) {
                 if (initial.skillID === Skills.Fishing) {
                     index = initial.areaID;
+                } else if(initial.skillID === Skills.Agility) {
+                    index = Agility.obstacles[initial.currentAction].category;
                 } else if (initial.isGathering) {
                     index = initial.currentAction;
                 } else if (initial.cookingCategory !== undefined) {
@@ -2530,37 +2529,6 @@
         // lvlToXp cache
         ETA.lvlToXp = Array.from({length: 200}, (_, i) => exp.level_to_xp(i));
 
-        // select and start craft overrides
-        ETA.selectRef = {};
-        [	// skill name, select names, < start name >
-            // start name is only required if the start method is not of the form `start${skill name}`
-            // production skills
-            ["Fletching", ["Fletch"]],
-            ["Runecrafting", ["Runecraft"]],
-            ["Crafting", ["Craft"]],
-            ["Cooking", ["CookingRecipe"]],
-            ["Summoning", ["Summon"]],
-            // gathering skills
-            ["Fishing", ["Fish"]],
-        ].forEach(skill => {
-            let skillName = skill[0];
-            // wrap the select methods
-            let selectNames = skill[1];
-            selectNames.forEach(entry => {
-                let selectName = "select" + entry;
-                // original methods are kept in the selectRef object
-                ETA.selectRef[selectName] = window[selectName];
-                window[selectName] = function (...args) {
-                    ETA.selectRef[selectName](...args);
-                    try {
-                        ETA.timeRemainingWrapper(Skills[skillName], false);
-                    } catch (e) {
-                        ETA.error(e);
-                    }
-                };
-            });
-        });
-
         ETA.updateSkillWindowRef = updateSkillWindow;
         updateSkillWindow = function (skill) {
             try {
@@ -2713,6 +2681,9 @@
                 ETA.startActionTimer('Thieving', 'thieving');
             }
         }
+        game.agility.startActionTimer = () => ETA.startActionTimer('Agility', 'agility');
+        game.astrology.startActionTimer = () => ETA.startActionTimer('Astrology', 'astrology');
+
         // production, override startActionTimer and selectXOnClick
         game.firemaking.startActionTimer = () => ETA.startActionTimer('Firemaking', 'firemaking');
         game.firemaking.selectLog = (recipeID) => ETA.selectLog('Firemaking', 'firemaking', recipeID);
@@ -2720,6 +2691,13 @@
         game.cooking.onRecipeSelectionClick = (recipe) => ETA.onRecipeSelectionClick('Cooking', 'cooking', recipe);
         game.smithing.startActionTimer = () => ETA.startActionTimer('Smithing', 'smithing');
         game.smithing.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Smithing', 'smithing', recipeID);
+        game.fletching.startActionTimer = () => ETA.startActionTimer('Fletching', 'fletching');
+        game.fletching.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Fletching', 'fletching', recipeID);
+        game.fletching.selectAltRecipeOnClick = (altID) => ETA.selectAltRecipeOnClick('Fletching', 'fletching', altID);
+        game.crafting.startActionTimer = () => ETA.startActionTimer('Crafting', 'crafting');
+        game.crafting.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Crafting', 'crafting', recipeID);
+        game.runecrafting.startActionTimer = () => ETA.startActionTimer('Runecrafting', 'runecrafting');
+        game.runecrafting.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Runecrafting', 'runecrafting', recipeID);
         game.herblore.startActionTimer = () => ETA.startActionTimer('Herblore', 'herblore');
         game.herblore.selectRecipeOnClick = (recipeID) => ETA.selectRecipeOnClick('Herblore', 'herblore', recipeID);
         game.summoning.startActionTimer = () => ETA.startActionTimer('Summoning', 'summoning');

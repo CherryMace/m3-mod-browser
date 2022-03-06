@@ -9,5 +9,6 @@
   "type": "script",
   "info": "https://greasyfork.org/en/scripts/430727-melvor-additive-skilling-anti-lag",
   "url": "https://greasyfork.org/en/scripts/430727-melvor-additive-skilling-anti-lag",
-  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Additive%20Skilling%20Anti-Lag/cache/anti-lag.js"
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Additive%20Skilling%20Anti-Lag/cache/anti-lag.js",
+  "hidden": true
 }

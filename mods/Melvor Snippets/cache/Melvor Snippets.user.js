@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor Snippets
 // @namespace	http://tampermonkey.net/
-// @version		0.0.11
+// @version		0.0.14
 // @description	Collection of various snippets
 // @grant		none
 // @author		GMiclotte
@@ -9,8 +9,8 @@
 // @include		https://*.melvoridle.com/*
 // @exclude		https://melvoridle.com/index.php
 // @exclude		https://*.melvoridle.com/index.php
-// @exclude		https://wiki.melvoridle.com*
-// @exclude		https://*.wiki.melvoridle.com*
+// @exclude		https://wiki.melvoridle.com/*
+// @exclude		https://*.wiki.melvoridle.com/*
 // @inject-into page
 // @noframes
 // @grant		none
@@ -114,21 +114,6 @@ defensePure.lastHitOnly = (skillID, maxLevel = 1) => {
 }
 snippet.end();
 
-/////////////////////////////
-//FixPerformSkillProcess.js//
-/////////////////////////////
-snippet.name = 'FixPerformSkillProcess.js';
-snippet.start();
-// fix perform skill process
-eval(performSkillProcess.toString().replace(
-    'if(!confirmedAdded&&!offline)return false;',
-    'if (!confirmedAdded && !ignoreBankFull && !offline) return false;'
-).replace(
-    /^function (\w+)/,
-    'window.$1 = function'
-));
-snippet.end();
-
 /////////////////////////
 //GetLocalisationKey.js//
 /////////////////////////
@@ -146,6 +131,24 @@ getLocalisationKey = (text) => {
     }
     return list;
 }
+snippet.end();
+
+//////////////////////
+//ListRaidUnlocks.js//
+//////////////////////
+snippet.name = 'ListRaidUnlocks.js';
+snippet.start();
+// list unlocked raid items
+listCrateItems = (unlocked = true) =>
+    RaidManager.crateItemWeights.filter(x =>
+        unlocked === game.golbinRaid.ownedCrateItems.has(x.itemID)
+    ).forEach(x =>
+        console.log(items[x.itemID].name)
+    );
+// to list the ones you have unlocked:
+// listCrateItems()
+// to list the ones you haven't unlocked:
+// listCrateItems(false)
 snippet.end();
 
 //////////////////
@@ -433,9 +436,6 @@ document.getElementById('magic-container').children[0].children[1].remove();
 // cloud saving
 document.getElementById('header-cloud-save-time').remove();
 document.getElementById('header-cloud-save-btn-connected').remove();
-
-// minibar-max-cape
-document.getElementById('minibar-max-cape').remove();
 snippet.end();
 
 ///////////////////
@@ -445,7 +445,7 @@ snippet.name = 'RerollSlayer.js';
 snippet.start();
 //reroll slayer task until desired task is met
 window.rerollSlayerTask = (monsterIDs, tier, extend = true) => {
-    if (window.stopRerolling) {
+    if (snippets.stopRerolling) {
         return;
     }
     const task = combatManager.slayerTask;

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Lemvor
-// @version      0.1.5
+// @version      0.1.7
 // @namespace    github.com/gmiclotte
 // @description  lemon
 // @author		GMiclotte
@@ -8,8 +8,8 @@
 // @include		https://*.melvoridle.com/*
 // @exclude		https://melvoridle.com/index.php
 // @exclude		https://*.melvoridle.com/index.php
-// @exclude		https://wiki.melvoridle.com*
-// @exclude		https://*.wiki.melvoridle.com*
+// @exclude		https://wiki.melvoridle.com/*
+// @exclude		https://*.wiki.melvoridle.com/*
 // @inject-into page
 // @noframes
 // @grant		none
@@ -67,7 +67,7 @@
         PETS,
         PRAYER,
         SPELLS,
-        agilityObstacles,
+        Agility.obstacles,
         combatAreas,
         items,
         slayerAreas,
@@ -88,7 +88,6 @@
         updateShop("gloves");
         updateSpellbook();
         updatePlayerStats();
-        updateAgilityBreakdown();
         Object.getOwnPropertyNames(SKILLS).forEach((_, skillID) => {
             updateSkillWindow(skillID);
             if (SKILLS[skillID].hasMastery) {
