@@ -1,0 +1,14 @@
+{
+  "id": "item_drop_rates",
+  "title": "Item Drop Rates",
+  "authors": [
+    "Polfy"
+  ],
+  "version": "2.3.4",
+  "targetGameVersion": "1.0.3",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/435520-melvor-items-drop-rates",
+  "url": "https://greasyfork.org/en/scripts/435520-melvor-items-drop-rates",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Item%20Drop%20Rates/img/icon.png",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Item%20Drop%20Rates/cache/item-drop-rates.js"
+}

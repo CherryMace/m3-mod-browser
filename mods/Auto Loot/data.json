@@ -1,0 +1,14 @@
+{
+  "id": "auto_loot",
+  "title": "Auto Loot",
+  "authors": [
+    "Polfy"
+  ],
+  "version": "1.5.3",
+  "targetGameVersion": "1.0.3",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/435548-melvor-auto-loot",
+  "url": "https://greasyfork.org/en/scripts/435548-melvor-auto-loot",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Auto%20Loot/img/icon.png",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Auto%20Loot/cache/auto-loot.js"
+}

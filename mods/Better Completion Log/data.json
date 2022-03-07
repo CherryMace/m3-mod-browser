@@ -1,0 +1,14 @@
+{
+  "id": "better_completion_log",
+  "title": "Better Completion Log",
+  "authors": [
+    "Polfy"
+  ],
+  "version": "2.3.4",
+  "targetGameVersion": "1.0.3",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/438058-melvor-better-completion-log",
+  "url": "https://greasyfork.org/en/scripts/438058-melvor-better-completion-log",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Better%20Completion%20Log/img/icon.png",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Better%20Completion%20Log/cache/better-completion-log.js"
+}

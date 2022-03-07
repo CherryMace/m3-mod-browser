@@ -1,0 +1,14 @@
+{
+  "id": "one_click_farming",
+  "title": "One Click Farming",
+  "authors": [
+    "Polfy"
+  ],
+  "version": "1.1.1",
+  "targetGameVersion": "1.0.3",
+  "type": "script",
+  "info": "https://greasyfork.org/en/scripts/438680-melvor-one-click-farming",
+  "url": "https://greasyfork.org/en/scripts/438680-melvor-one-click-farming",
+  "icon": "https://cherrymace.github.io/m3-mod-browser/mods/One%20Click%20Farming/img/icon.png",
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/One%20Click%20Farming/cache/one-click-farming.js"
+}
