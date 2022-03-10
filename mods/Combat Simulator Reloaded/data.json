@@ -5,14 +5,14 @@
     "Visua",
     "TinyCoyote"
   ],
-  "version": "1.6.3",
-  "targetGameVersion": "1.0.2",
+  "version": "1.6.4",
+  "targetGameVersion": "1.0.3",
   "type": "ext",
   "info": "https://github.com/visua0/Melvor-Idle-Combat-Simulator-Reloaded",
-  "url": "https://github.com/visua0/Melvor-Idle-Combat-Simulator-Reloaded/releases/download/v1.6.1/melvor_idle_combat_simulator_reloaded-1.6.3.zip",
+  "url": "https://github.com/visua0/Melvor-Idle-Combat-Simulator-Reloaded/releases/download/v1.6.4/melvor_idle_combat_simulator_reloaded-1.6.4.zip",
   "icon": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/img/icon.png",
   "featured": "main",
   "featuredOrder": 0,
   "featuredImage": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/img/featured.png",
-  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/cache/melvor_idle_combat_simulator_reloaded-1.6.3.zip"
+  "download": "https://cherrymace.github.io/m3-mod-browser/mods/Combat%20Simulator%20Reloaded/cache/melvor_idle_combat_simulator_reloaded-1.6.4.zip"
 }
