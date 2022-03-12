@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.1.2
+// @version      1.2.1
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -169,7 +169,7 @@ function setTrigger(category, name, greaterThan, masteryItem, number) {
   switch (category) {
     case "Idle":
       return () => {
-        return !combatManager.isInCombat && offline.skill == null;
+        return !combatManager.isInCombat && game.activeSkill == null;
       };
     case "Item Quantity":
       if (greaterThan == "≥") {
@@ -253,7 +253,7 @@ function fetchMasteryID(skillName, itemName) {
   let masteryID = itemID >= 0 && items[itemID].masteryID ? items[itemID].masteryID[1] : null;
   switch (skillName) {
     case "Cooking":
-      masteryID = cookingItems.find((a) => a.itemID == itemID).cookingID;
+      masteryID = Cooking.recipes.find((a) => a.itemID == itemID).masteryID;
       break;
     case "Herblore":
       masteryID = Herblore.potions.find((a) => a.name == itemName).masteryID;
@@ -262,10 +262,10 @@ function fetchMasteryID(skillName, itemName) {
       masteryID = Thieving.npcs.find((a) => a.name == itemName).id;
       break;
     case "Agility":
-      masteryID = agilityObstacles.findIndex((a) => a.name == itemName);
+      masteryID = Agility.obstacles.findIndex((a) => a.name == itemName);
       break;
     case "Astrology":
-      masteryID = ASTROLOGY.findIndex((a) => a.name == itemName);
+      masteryID = Astrology.constellations.findIndex((a) => a.name == itemName);
       break;
     case "Mining":
       masteryID = Mining.rockData.findIndex((a) => a.name == itemName);
@@ -286,9 +286,7 @@ function setAction(actionCategory, actionName, skillItem, skillItem2, qty) {
         return () => {
           if (combatManager.slayerTask.killsLeft > 0) {
             const mID = combatManager.slayerTask.monster.id;
-            const areaData = [...areaMenus.combat.areas, ...areaMenus.slayer.areas].find((a) =>
-              a.monsters.includes(mID)
-            );
+            const areaData = [...areaMenus.combat.areas, ...areaMenus.slayer.areas].find((a) => a.monsters.includes(mID));
             if (combatManager.isInCombat && combatManager.selectedMonster == mID) return true;
             combatManager.stopCombat();
             combatManager.selectMonster(mID, areaData);
@@ -313,9 +311,7 @@ function setAction(actionCategory, actionName, skillItem, skillItem2, qty) {
       }
       //regular monster selection
       const monsterIndex = MONSTERS.findIndex((a) => a.name == actionName);
-      const areaData = [...areaMenus.combat.areas, ...areaMenus.slayer.areas].find((a) =>
-        a.monsters.includes(monsterIndex)
-      );
+      const areaData = [...areaMenus.combat.areas, ...areaMenus.slayer.areas].find((a) => a.monsters.includes(monsterIndex));
       return () => {
         if (checkRequirements(areaData.entryRequirements)) {
           if (!(combatManager.isInCombat && combatManager.selectedMonster == monsterIndex))
@@ -364,10 +360,7 @@ function setAction(actionCategory, actionName, skillItem, skillItem2, qty) {
               //check level req
               if (skillLevel[CONSTANTS.skill.Magic] < ANCIENT[spellID].magicLevelRequired) return false;
               //check dungeon req
-              if (
-                dungeonCompleteCount[ANCIENT[spellID].requiredDungeonCompletion[0]] <
-                ANCIENT[spellID].requiredDungeonCompletion[1]
-              )
+              if (dungeonCompleteCount[ANCIENT[spellID].requiredDungeonCompletion[0]] < ANCIENT[spellID].requiredDungeonCompletion[1])
                 return false;
               player.toggleSpellAncient(spellID);
               return true;
@@ -477,12 +470,11 @@ function setAction(actionCategory, actionName, skillItem, skillItem2, qty) {
       };
     }
     case "Build Agility Obstacle": {
-      const obstacleID = agilityObstacles.findIndex((a) => a.name == skillItem);
+      const obstacleID = Agility.obstacles.findIndex((a) => a.name == skillItem);
       const obstacleNumber = parseInt(actionName) - 1;
       return () => {
         if (chosenAgilityObstacles[obstacleNumber] == obstacleID) return true;
-        if (!canIAffordThis(agilityObstacles[obstacleID].cost, agilityObstacles[obstacleID].requirements, obstacleID))
-          return false;
+        if (!canIAffordThis(Agility.obstacles[obstacleID].cost, Agility.obstacles[obstacleID].skillRequirements, obstacleID)) return false;
         if (chosenAgilityObstacles[obstacleNumber] >= 0) destroyAgilityObstacle(obstacleNumber, true);
         buildAgilityObstacle(obstacleID, true);
         return true;
@@ -504,104 +496,95 @@ function setSkillAction(actionName, skillItem, skillItem2) {
   switch (actionName) {
     case "Agility":
       return () => {
-        if (!isAgility) startAgility();
+        if (game.activeSkill !== globalThis.ActiveSkills.Agility) game.agility.start();
         return true;
       };
     case "Astrology": {
-      const constellation = ASTROLOGY.find((a) => a.name == skillItem); // Find constellation
+      const constellation = Astrology.constellations.find((a) => a.name == skillItem); // Find constellation
       return () => {
         if (skillLevel[CONSTANTS.skill.Astrology] < constellation.level) return false;
-        if (activeAstrology != constellation.id) toggleAstrology(constellation.id);
+        if (game.astrology.activeConstellation.id != constellation.id || game.activeSkill != globalThis.ActiveSkills.ASTROLOGY)
+          game.astrology.studyConstellationOnClick(constellation);
         return true;
       };
     }
     case "Cooking": {
       const itemID = items.findIndex((a) => a.name == skillItem2);
-      const category = cookingItems.find((a) => a.itemID == itemID).cookingCategory;
+      const recipe = Cooking.recipes.find((a) => a.itemID == itemID);
+      const category = recipe.category;
       if (skillItem == "Active") {
         return () => {
-          [0, 1, 2].forEach((category) => collectFromStockpile(category));
-          if (skillLevel[CONSTANTS.skill.Cooking] < cookingItems.find((a) => a.itemID == itemID).cookingLevel)
-            return false;
-          if (offline.skill == CONSTANTS.skill.Cooking && offline.action.active == itemID) return true;
-          selectCookingRecipe(category, itemID);
-          toggleActiveCook(category);
-          const passives = passiveCooking.reduce((arr, item, index) => {
-            return index != category && item >= 0 ? [...arr, index] : arr;
-          }, []);
-          passives.forEach((a) => togglePassiveCook(a));
+          const passives = [];
+          [0, 1, 2].forEach((c) => {
+            game.cooking.onCollectStockpileClick(c);
+            if (c != category && game.cooking.passiveCookTimers.has(c)) passives.push(c);
+          });
+          if (skillLevel[CONSTANTS.skill.Cooking] < recipe.cookingLevel) return false;
+          if (game.cooking.selectedRecipes.get(category).itemID != itemID) game.cooking.onRecipeSelectionClick(recipe);
+          if (game.activeSkill == globalThis.ActiveSkills.COOKING && game.cooking.activeCookingCategory == category) return true;
+          game.cooking.onActiveCookButtonClick(category);
+          passives.forEach((a) => game.cooking.onPassiveCookButtonClick(a));
           return true;
         };
       } else {
         return () => {
-          [0, 1, 2].forEach((category) => collectFromStockpile(category));
-          if (skillLevel[CONSTANTS.skill.Cooking] < cookingItems.find((a) => a.itemID == itemID).cookingLevel)
-            return false;
-          if (passiveCooking[category] == itemID) return true;
-          selectCookingRecipe(category, itemID);
-          togglePassiveCook(category);
+          [0, 1, 2].forEach((category) => game.cooking.onCollectStockpileClick(category));
+          if (skillLevel[CONSTANTS.skill.Cooking] < Cooking.recipes.find((a) => a.itemID == itemID).level) return false;
+          if (game.cooking.selectedRecipes.get(category).itemID != itemID) game.cooking.onRecipeSelectionClick(recipe);
+          if (game.cooking.passiveCookTimers.has(category)) return true;
+          game.cooking.onPassiveCookButtonClick(category);
           return true;
         };
       }
     }
     case "Crafting":
-      actionID = craftingItems.find((a) => a.itemID == itemID).craftingID;
+      actionID = Crafting.recipes.find((a) => a.itemID == itemID).masteryID;
       return () => {
-        if (skillLevel[CONSTANTS.skill.Crafting] < craftingItems[actionID].craftingLevel) return false;
-        if (selectedCraft !== actionID) selectCraft(actionID);
-        if (!isCrafting) startCrafting(true);
+        if (skillLevel[CONSTANTS.skill.Crafting] < Crafting.recipes[actionID].level) return false;
+        if (game.crafting.selectedRecipeID !== actionID) game.crafting.selectRecipeOnClick(actionID);
+        if (game.activeSkill !== globalThis.ActiveSkills.CRAFTING) game.crafting.start(true);
         return true;
       };
     case "Firemaking":
       actionID = Firemaking.recipes.findIndex((x) => x.logID == itemID);
       return () => {
         if (skillLevel[CONSTANTS.skill.Firemaking] < Firemaking.recipes[actionID].levelRequired) return false;
-        if (!game.firemaking.activeRecipe || game.firemaking.activeRecipe.logID !== actionID)
-          game.firemaking.selectLog(actionID);
+        if (!game.firemaking.activeRecipe || game.firemaking.activeRecipe.logID !== actionID) game.firemaking.selectLog(actionID);
         if (!game.firemaking.isActive) game.firemaking.burnLog();
         return true;
       };
     case "Fishing": {
-      const fishIndex = fishingItems.find((a) => a.itemID == itemID).fishingID;
-      const areaID = fishingAreas.findIndex((a) => a.fish.includes(fishIndex));
-      const fishID = fishingAreas[areaID].fish.findIndex((a) => a == fishIndex);
+      const fish = Fishing.data.find((a) => a.itemID == itemID);
+      const area = Fishing.areas.find((a) => a.fish.includes(fish));
       return () => {
         if (
-          (!player.equipment.slotArray.map((a) => a.item.id).includes(CONSTANTS.item.Barbarian_Gloves) &&
-            areaID == 6) ||
-          (!secretAreaUnlocked && areaID == 7) ||
-          skillLevel[CONSTANTS.skill.Fishing] < fishingItems[fishIndex].fishingLevel
+          (!player.equipment.slotArray.map((a) => a.item.id).includes(CONSTANTS.item.Barbarian_Gloves) && area.id == 6) ||
+          (!game.fishing.secretAreaUnlocked && area.id == 7) ||
+          skillLevel[CONSTANTS.skill.Fishing] < fish.level
         )
           return false;
-        if (!isFishing) {
-          selectFish(areaID, fishID);
-          startFishing(areaID, fishID, true);
-        } else {
-          if (areaID != offline.action[0] || fishID != offline.action[1]) {
-            startFishing(offline.action[0], offline.action[1], true);
-            selectFish(areaID, fishID);
-            startFishing(areaID, fishID, true);
-          }
+        game.fishing.onAreaFishSelection(area, fish);
+        if (game.activeSkill !== globalThis.ActiveSkills.FISHING || game.fishing.activeFishingArea != area) {
+          game.fishing.onAreaStartButtonClick(area);
         }
         return true;
       };
     }
     case "Fletching":
-      actionID = fletchingItems.find((a) => a.itemID == itemID).fletchingID;
+      actionID = Fletching.recipes.find((a) => a.itemID == itemID).masteryID;
       const log = items.findIndex((a) => a.name == skillItem2);
       if (skillItem != "Arrow Shafts") {
         return () => {
-          if (skillLevel[CONSTANTS.skill.Fletching] < fletchingItems[actionID].fletchingLevel) return false;
-          if (selectedFletch !== actionID) selectFletch(actionID);
-          if (!isFletching) startFletching(true);
+          if (skillLevel[CONSTANTS.skill.Fletching] < Fletching.recipes[actionID].level) return false;
+          if (game.fletching.selectedRecipeID !== actionID) game.fletching.selectRecipeOnClick(actionID);
+          if (game.activeSkill !== globalThis.ActiveSkills.FLETCHING) game.fletching.start();
           return true;
         };
       }
       return () => {
-        if (skillLevel[CONSTANTS.skill.Fletching] < fletchingItems[actionID].fletchingLevel || !checkBankForItem(log))
-          return false;
-        if (selectedFletchLog != log || selectedFletch !== actionID) selectFletch(actionID, log);
-        if (!isFletching) startFletching(true);
+        if (skillLevel[CONSTANTS.skill.Fletching] < Fletching.recipes[actionID].level || !checkBankForItem(log)) return false;
+        if (game.fletching.selectedAltRecipe != log || selectedFletch !== actionID) game.fletching.selectAltRecipeOnClick(log);
+        if (game.activeSkill !== globalThis.ActiveSkills.FLETCHING) game.fletching.start();
         return true;
       };
     case "Herblore":
@@ -645,11 +628,11 @@ function setSkillAction(actionName, skillItem, skillItem2) {
       };
     }
     case "Runecrafting":
-      actionID = runecraftingItems.findIndex((a) => a.itemID == itemID);
+      actionID = Runecrafting.recipes.findIndex((a) => a.itemID == itemID);
       return () => {
-        if (skillLevel[CONSTANTS.skill.Runecrafting] < runecraftingItems[actionID].runecraftingLevel) return false;
-        if (selectedRunecraft !== actionID) selectRunecraft(actionID);
-        if (!isRunecrafting) startRunecrafting(true);
+        if (skillLevel[CONSTANTS.skill.Runecrafting] < Runecrafting.recipes[actionID].level) return false;
+        if (game.runecrafting.selectedRecipeID !== actionID) game.runecrafting.selectRecipeOnClick(actionID);
+        if (game.activeSkill !== globalThis.ActiveSkills.RUNECRAFTING) game.runecrafting.start(true);
         return true;
       };
     case "Smithing":
@@ -661,24 +644,22 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         return true;
       };
     case "Summoning": {
-      const summonID = summoningItems.find((a) => a.itemID == itemID).summoningID;
+      const summonID = Summoning.marks.findIndex((a) => a.itemID == itemID);
       let recipeID = 0;
       if (options.actions["Start Skill"]["Summoning"][skillItem] != null) {
         const ingredientID = items.findIndex((a) => a.name == skillItem2);
-        recipeID = items[itemID].summoningReq.findIndex((a) => a.slice(-1)[0].id == ingredientID);
+        recipeID = Summoning.marks[summonID].nonShardItemCosts.findIndex((a) => a == ingredientID);
       }
       return () => {
         //exit if low level
-        if (
-          skillLevel[CONSTANTS.skill.Summoning] < summoningItems.find((a) => a.summoningID == summonID).summoningLevel
-        )
-          return false;
+        if (skillLevel[CONSTANTS.skill.Summoning] < Summoning.marks[summonID].level) return false;
         //if summon is not selected, choose it
-        if (selectedSummon != summonID || summoningData.defaultRecipe[summonID] != recipeID) {
-          selectSummon(summonID, recipeID);
+        if (game.summoning.selectedRecipeID != summonID || game.summoning.selectedAltRecipe != recipeID) {
+          game.summoning.selectRecipeOnClick(summonID);
+          game.summoning.selectAltRecipeOnClick(recipeID);
         }
-        if (!isSummoning) createSummon(true);
-        return isSummoning;
+        if (game.activeSkill !== globalThis.ActiveSkills.SUMMONING) game.summoning.start();
+        return game.activeSkill === globalThis.ActiveSkills.SUMMONING;
       };
     }
     case "Thieving": {
@@ -687,17 +668,14 @@ function setSkillAction(actionName, skillItem, skillItem2) {
       const panel = thievingMenu.areaPanels.find((a) => a.area == area);
       return () => {
         if (skillLevel[CONSTANTS.skill.Thieving] < npc.level) return false;
-        if (offline.skill == CONSTANTS.skill.Thieving && game.thieving.currentNPC == npc) return true;
+        if (game.activeSkill == globalThis.ActiveSkills.THIEVING && game.thieving.currentNPC == npc) return true;
         thievingMenu.selectNPCInPanel(npc, panel);
         game.thieving.startThieving(area, npc);
         return true;
       };
     }
     case "Woodcutting":
-      actionID = [itemID, items.findIndex((a) => a.name == skillItem2)].slice(
-        0,
-        playerModifiers.increasedTreeCutLimit + 1
-      );
+      actionID = [itemID, items.findIndex((a) => a.name == skillItem2)].slice(0, playerModifiers.increasedTreeCutLimit + 1);
       return () => {
         let result = true;
         let currentTrees = [];
@@ -739,18 +717,7 @@ class Action {
    * @param {string} skillItem2 (Tier 4 option) name of second tree to cut or alt.magic item
    * @param {string} qty (Tier 4 option) amount of item to buy if applicable
    */
-  constructor(
-    category,
-    name,
-    greaterThan,
-    masteryItem,
-    number,
-    actionCategory,
-    actionName,
-    skillItem,
-    skillItem2,
-    qty
-  ) {
+  constructor(category, name, greaterThan, masteryItem, number, actionCategory, actionName, skillItem, skillItem2, qty) {
     switch (category) {
       case "Idle":
         this.description = `If no active skills/combat:`;
@@ -1270,26 +1237,24 @@ function loadAQ() {
     if (isNaN(a)) options.triggers["Skill Level"][a] = "num";
   });
   options.triggers["Skill XP"] = options.triggers["Skill Level"];
-  Object.keys(options.triggers["Mastery Level"]).forEach(
-    (skill) => (options.triggers["Mastery Pool %"][skill] = "num")
-  );
+  Object.keys(options.triggers["Mastery Level"]).forEach((skill) => (options.triggers["Mastery Pool %"][skill] = "num"));
 
   //add mastery/action names for each skill
   {
-    ASTROLOGY.forEach((item) => {
+    Astrology.constellations.forEach((item) => {
       options.triggers["Mastery Level"]["Astrology"][item.name] = "num";
       options.actions["Start Skill"]["Astrology"][item.name] = null;
     });
-    cookingItems.forEach((item) => {
+    Cooking.recipes.forEach((item) => {
       options.triggers["Mastery Level"]["Cooking"][items[item.itemID].name] = "num";
     });
-    options.actions["Start Skill"]["Cooking"]["Active"] = cookingItems.reduce((obj, a) => {
+    options.actions["Start Skill"]["Cooking"]["Active"] = Cooking.recipes.reduce((obj, a) => {
       obj[items[a.itemID].name] = null;
       return obj;
     }, {});
     options.actions["Start Skill"]["Cooking"]["Passive"] = options.actions["Start Skill"]["Cooking"]["Active"];
 
-    craftingItems.forEach((item) => {
+    Crafting.recipes.forEach((item) => {
       options.triggers["Mastery Level"]["Crafting"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Crafting"][items[item.itemID].name] = null;
     });
@@ -1307,7 +1272,7 @@ function loadAQ() {
       }
     });
 
-    fishingItems.forEach((item) => {
+    Fishing.data.forEach((item) => {
       options.triggers["Mastery Level"]["Fishing"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Fishing"][items[item.itemID].name] = null;
     });
@@ -1324,7 +1289,7 @@ function loadAQ() {
       );
     }
 
-    fletchingItems.forEach((item) => {
+    Fletching.recipes.forEach((item) => {
       options.triggers["Mastery Level"]["Fletching"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Fletching"][items[item.itemID].name] = null;
     });
@@ -1338,7 +1303,7 @@ function loadAQ() {
       options.actions["Start Skill"]["Herblore"][item.name] = null;
     });
 
-    agilityObstacles.forEach((item) => {
+    Agility.obstacles.forEach((item) => {
       options.triggers["Mastery Level"]["Agility"][item.name] = "num";
     });
 
@@ -1347,7 +1312,7 @@ function loadAQ() {
       options.actions["Start Skill"]["Mining"][item.name] = null;
     });
 
-    runecraftingItems.forEach((item) => {
+    Runecrafting.recipes.forEach((item) => {
       options.triggers["Mastery Level"]["Runecrafting"][items[item.itemID].name] = "num";
       options.actions["Start Skill"]["Runecrafting"][items[item.itemID].name] = null;
     });
@@ -1362,14 +1327,13 @@ function loadAQ() {
       options.actions["Start Skill"]["Thieving"][npc.name] = null;
     });
 
-    summoningItems.forEach((item) => {
+    Summoning.marks.forEach((item) => {
       options.triggers["Mastery Level"]["Summoning"][items[item.itemID].name] = "num";
-      if (items[item.itemID].summoningReq.length == 1) {
+      if (item.nonShardItemCosts.length == 1) {
         options.actions["Start Skill"]["Summoning"][items[item.itemID].name] = null;
       } else {
         options.actions["Start Skill"]["Summoning"][items[item.itemID].name] = {};
-        items[item.itemID].summoningReq.forEach((recipe) => {
-          const ingredient = recipe.slice(-1)[0].id;
+        item.nonShardItemCosts.forEach((ingredient) => {
           options.actions["Start Skill"]["Summoning"][items[item.itemID].name][items[ingredient].name] = null;
         });
       }
@@ -1377,14 +1341,12 @@ function loadAQ() {
   }
 
   //agility obstacles
-  options.actions["Build Agility Obstacle"] = agilityObstacles.reduce((obj, a) => {
+  options.actions["Build Agility Obstacle"] = Agility.obstacles.reduce((obj, a) => {
     if (!obj.hasOwnProperty(a.category + 1)) obj[a.category + 1] = {};
     obj[a.category + 1][a.name] = null;
     return obj;
   }, {});
-  Object.keys(options.actions["Build Agility Obstacle"]).forEach(
-    (a) => (options.actions["Remove Agility Obstacle"][a] = null)
-  );
+  Object.keys(options.actions["Build Agility Obstacle"]).forEach((a) => (options.actions["Remove Agility Obstacle"][a] = null));
 
   //potions
   options.actions["Use Potion"] = items.reduce((obj, item) => {
@@ -1408,7 +1370,7 @@ function loadAQ() {
         options.actions["Start Skill"]["Magic"][spell.name][items[item.itemID].name] = null;
       }
     } else if (spell.consumes === 1) {
-      junkItems.forEach((a) => (options.actions["Start Skill"]["Magic"][spell.name][items[a].name] = null));
+      Fishing.junkItems.forEach((a) => (options.actions["Start Skill"]["Magic"][spell.name][items[a].name] = null));
     } else if (spell.consumes === 0) {
       options.actions["Start Skill"]["Magic"][spell.name] = options.actions["Sell Item"];
     } else options.actions["Start Skill"]["Magic"][spell.name] = null;
@@ -1419,9 +1381,7 @@ function loadAQ() {
     options.triggers["Equipped Item Quantity"][a.name] = "num";
     options.actions["Equip Item"][a.name] = null;
   }
-  for (const a of items.filter(
-    (a) => a.hasOwnProperty("validSlots") && (a.validSlots[0] == "Quiver" || a.validSlots[0] == "Summon1")
-  ))
+  for (const a of items.filter((a) => a.hasOwnProperty("validSlots") && (a.validSlots[0] == "Quiver" || a.validSlots[0] == "Summon1")))
     options.triggers["Equipped Item Quantity"][a.name] = "num";
 
   //edit buyShopItem  function so that it returns boolean based on if it met requirements
@@ -1473,7 +1433,7 @@ function loadAQ() {
   }
 
   //add in sidebar item
-  $("li.nav-main-item:contains(Bank)")[0].insertAdjacentHTML(
+  document.getElementsByClassName("bank-space-nav")[0].parentNode.parentNode.insertAdjacentHTML(
     "afterend",
     `<li class="nav-main-item">
   <a class="nav-main-link nav-compact" style="cursor: pointer;">
@@ -1567,12 +1527,9 @@ function loadAQ() {
 
   for (const name in CONSTANTS.skill) {
     if (Object.keys(MASTERY).includes(`${CONSTANTS.skill[name]}`))
-      document
-        .getElementById("aq-skill-list")
-        .insertAdjacentHTML("beforeend", `<option value="${CONSTANTS.skill[name]}">${name}</option>`);
+      document.getElementById("aq-skill-list").insertAdjacentHTML("beforeend", `<option value="${CONSTANTS.skill[name]}">${name}</option>`);
   }
-  for (let i = 60; i < 88; i++)
-    document.getElementById("aq-base").insertAdjacentHTML("beforeend", `<option value="${i}">${i}</option>`);
+  for (let i = 60; i < 88; i++) document.getElementById("aq-base").insertAdjacentHTML("beforeend", `<option value="${i}">${i}</option>`);
   tooltips.masteryConfig = [
     tippy(document.getElementById("aq-checkpoint-list"), {
       content: "Minimum pool % to maintain",
@@ -1591,8 +1548,7 @@ function loadAQ() {
   window.masteryIDs = {};
   for (const skillName in options.triggers["Mastery Level"]) {
     masteryIDs[skillName] = {};
-    for (const name in options.triggers["Mastery Level"][skillName])
-      masteryIDs[skillName][name] = fetchMasteryID(skillName, name);
+    for (const name in options.triggers["Mastery Level"][skillName]) masteryIDs[skillName][name] = fetchMasteryID(skillName, name);
   }
 
   //load locally stored action queue if it exists
@@ -1790,9 +1746,7 @@ function importActions() {
           !newAction.description.includes("null") &&
           typeof newAction.trigger == "function" &&
           newAction.action.every((a) => {
-            return (
-              !a.description.includes("undefined") && !a.description.includes("null") && typeof a.start == "function"
-            );
+            return !a.description.includes("undefined") && !a.description.includes("null") && typeof a.start == "function";
           })
         )
           addToQueue(newAction);
@@ -1859,11 +1813,7 @@ function manageMastery() {
     }
 
     //exit if pool unchanged
-    if (
-      masteryClone[skill].pool == MASTERY[skill].pool &&
-      MASTERY[skill].pool < maxPool * masteryConfig[skill].checkpoint
-    )
-      continue;
+    if (masteryClone[skill].pool == MASTERY[skill].pool && MASTERY[skill].pool < maxPool * masteryConfig[skill].checkpoint) continue;
 
     //exit if maxed mastery
     updateMasteryLvl(skill);
@@ -1876,9 +1826,7 @@ function manageMastery() {
         if (MASTERY[skill].xp[i] < MASTERY[skill].xp[masteryID]) masteryID = i;
       }
     } else {
-      const noncompletedPrio = masteryConfig[skill].arr.filter(
-        (a) => masteryClone[skill].lvl[a] < masteryConfig[skill].base
-      );
+      const noncompletedPrio = masteryConfig[skill].arr.filter((a) => masteryClone[skill].lvl[a] < masteryConfig[skill].base);
       if (noncompletedPrio.length == 0) {
         //choose lowest of nonprio or lowest of prio if nonprio maxed
         let arr = MASTERY[skill].xp.map((a, i) => i);
@@ -1923,9 +1871,9 @@ function manageMastery() {
         //showSpendMasteryXP(skill);
       }
       if (skill === CONSTANTS.skill.Fishing) {
-        for (let i = 0; i < fishingAreas.length; i++) {
-          for (let f = 0; f < fishingAreas[i].fish.length; f++) {
-            if (fishingAreas[i].fish[f] === masteryID) {
+        for (let i = 0; i < Fishing.areas.length; i++) {
+          for (let f = 0; f < Fishing.areas[i].fish.length; f++) {
+            if (Fishing.areas[i].fish[f] === masteryID) {
               updateFishingMastery(i, f);
               break;
             }
@@ -2306,10 +2254,7 @@ function updateMasteryConfig(changeSkill = true) {
   if (changeSkill) {
     if (masteryConfigChanges.skill != null) {
       updateMasteryPriority();
-      let arr =
-        masteryConfigChanges.arr == null
-          ? [...masteryConfig[masteryConfigChanges.skill].arr]
-          : [...masteryConfigChanges.arr];
+      let arr = masteryConfigChanges.arr == null ? [...masteryConfig[masteryConfigChanges.skill].arr] : [...masteryConfigChanges.arr];
       masteryConfig[masteryConfigChanges.skill] = {
         checkpoint: masteryConfigChanges.checkpoint,
         prio: masteryConfigChanges.prio,
@@ -2332,9 +2277,7 @@ function updateMasteryConfig(changeSkill = true) {
     masteryConfigChanges.base = parseInt(document.getElementById("aq-base").value);
     updateMasteryPriority();
     document.getElementById("aq-base").disabled = !JSON.parse(document.getElementById("aq-mastery-strategy").value);
-    document.getElementById("aq-mastery-array").disabled = !JSON.parse(
-      document.getElementById("aq-mastery-strategy").value
-    );
+    document.getElementById("aq-mastery-array").disabled = !JSON.parse(document.getElementById("aq-mastery-strategy").value);
   }
 }
 
