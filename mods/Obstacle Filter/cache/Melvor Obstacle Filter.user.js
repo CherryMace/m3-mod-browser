@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor Obstacle Filter
 // @namespace	http://tampermonkey.net/
-// @version		0.1.7
+// @version		0.1.8
 // @description	Agility course planner that allows you to filter agility obstacles based on skill of interest.
 // @author		GMiclotte
 // @include		https://melvoridle.com/*
@@ -79,11 +79,16 @@
 
         obstacleFilter.addFilterCard = () => {
             obstacleFilter.filterCard = new MICSR.Card(obstacleFilter.content, '', '150px', true);
-            obstacleFilter.filterCard.addButton('Import Agility Course', () => obstacleFilter.agilityCourse.importAgilityCourse(
-                chosenAgilityObstacles,
-                MASTERY[Skills.Agility].xp.map(x => x > 13034431),
-                agilityPassivePillarActive,
-            ));
+            obstacleFilter.filterCard.addButton('Import Agility Course', () => {
+                const chosenAgilityObstacles = [];
+                game.agility.builtObstacles.forEach(x => chosenAgilityObstacles.push(x.id));
+                const agilityPassivePillarActive = game.agility.builtPassivePillar === undefined ? -1 : game.agility.builtPassivePillar.id;
+                obstacleFilter.agilityCourse.importAgilityCourse(
+                    chosenAgilityObstacles,
+                    MASTERY[Skills.Agility].xp.map(x => x > 13034431),
+                    agilityPassivePillarActive,
+                );
+            });
             const filterData = [
                 [
                     {tag: 'all', text: 'All', media: 'assets/media/main/completion_log.svg'},
@@ -226,8 +231,8 @@
 
         const reqMicsrMajorVersion = 1;
         const reqMicsrMinorVersion = 6;
-        const reqMicsrPatchVersion = 0;
-        const reqMicsrPreReleaseVersion = 2;
+        const reqMicsrPatchVersion = 4;
+        const reqMicsrPreReleaseVersion = undefined;
 
         let reqMicsrversion = `v${reqMicsrMajorVersion}.${reqMicsrMinorVersion}.${reqMicsrPatchVersion}`;
         if (reqMicsrPreReleaseVersion !== undefined) {

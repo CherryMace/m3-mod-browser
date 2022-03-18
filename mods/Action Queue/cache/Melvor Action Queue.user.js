@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.2.1
+// @version      1.2.3
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -169,7 +169,7 @@ function setTrigger(category, name, greaterThan, masteryItem, number) {
   switch (category) {
     case "Idle":
       return () => {
-        return !combatManager.isInCombat && game.activeSkill == null;
+        return !combatManager.isInCombat && !game.activeSkill;
       };
     case "Item Quantity":
       if (greaterThan == "≥") {
@@ -614,6 +614,7 @@ function setSkillAction(actionName, skillItem, skillItem2) {
         if (game.altMagic.selectedSpellID !== actionID) game.altMagic.selectSpellOnClick(actionID);
         switch (AltMagic.spells[actionID].consumes) {
           case 3:
+          case 2:
             const bar = Smithing.recipes.find((a) => a.itemID == magicItem);
             if (skillLevel[CONSTANTS.skill.Smithing] < bar.level) return false;
             if (game.altMagic.selectedSmithingRecipe != bar) game.altMagic.selectBarOnClick(bar);
@@ -1365,7 +1366,7 @@ function loadAQ() {
   //add altmagic names
   AltMagic.spells.forEach((spell) => {
     options.actions["Start Skill"]["Magic"][spell.name] = {};
-    if (spell.consumes === 3) {
+    if (spell.consumes == 2 || spell.consumes == 3) {
       for (const item of AltMagic.smithingBarRecipes) {
         options.actions["Start Skill"]["Magic"][spell.name][items[item.itemID].name] = null;
       }
