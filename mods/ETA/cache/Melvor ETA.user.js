@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.11.2
+// @version		0.11.3
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -568,7 +568,7 @@
                     }
                     break;
                 case Skills.Summoning:
-                    if (game.herblore.selectedRecipeID === -1) {
+                    if (game.summoning.selectedRecipeID === -1) {
                         return;
                     }
                     break;
@@ -950,10 +950,10 @@
                     }
                     break;
                 case Skills.Runecrafting:
-                    if (items[itemID].type === "Rune") {
+                    if (game.runecrafting.isMakingRunes) {
                         preservationChance += player.modifiers.increasedRunecraftingEssencePreservation;
                     }
-                    if (items[itemID].type === "Magic Staff") {
+                    if (game.runecrafting.isMakingStaff) {
                         preservationChance += player.modifiers.summoningSynergy_3_10;
                     }
                     if (poolReached(initial, poolXp, 2)) {
@@ -1135,7 +1135,7 @@
             let xpMultiplier = 1;
             switch (initial.skillID) {
                 case Skills.Runecrafting:
-                    if (poolReached(initial, poolXp, 1) && items[itemID].type === "Rune") {
+                    if (poolReached(initial, poolXp, 1) && game.runecrafting.isMakingRunes) {
                         xpMultiplier += 1.5;
                     }
                     break;
@@ -1326,12 +1326,12 @@
             initial.skillInterval = game.crafting.baseInterval;
             for (let i of initial.recipe.itemCosts) {
                 let qty = i.qty;
-                if (items[initial.itemID].category === "Combat" && items[initial.itemID].tier === "Dragonhide" && qty > 1) {
+                if (initial.recipe.category === CraftingCategory.Dragonhide) {
                     qty -= player.modifiers.summoningSynergy_9_16;
                 }
                 initial.skillReq.push({
                     ...i,
-                    qty: qty,
+                    qty: Math.max(1, qty),
                 });
             }
 
@@ -1506,9 +1506,9 @@
                 shardReduction++;
             }
             // pool shard reduction
-            if (poolReached(initial, poolXp, 1) && items[initial.itemID].summoningTier <= 2) {
+            if (poolReached(initial, poolXp, 1) && initial.recipe.tier <= 2) {
                 shardReduction++;
-            } else if (poolReached(initial, poolXp, 3) && items[initial.itemID].summoningTier === 3) {
+            } else if (poolReached(initial, poolXp, 3) && initial.recipe.tier === 3) {
                 shardReduction++;
             }
             // modifier shard reduction
@@ -2578,9 +2578,8 @@
         }
 
         ETA.selectRecipeOnClick = (skillName, propName, recipeID) => {
-            if (recipeID !== game[propName].selectedRecipeID && game[propName].isActive) {
-                game[propName].stop();
-            }
+            if (recipeID !== game[propName].selectedRecipeID && game[propName].isActive && !game[propName].stop())
+                return;
             game[propName].selectedRecipeID = recipeID;
             game[propName].renderQueue.selectedRecipe = true;
             game[propName].render();
@@ -2596,8 +2595,8 @@
             if (recipeToSelect.level > game[propName].level) {
                 notifyPlayer(game[propName].id, getLangString('TOASTS', 'LEVEL_REQUIRED_TO_BURN'), 'danger');
             } else {
-                if (game[propName].selectedRecipeID !== recipeID && game[propName].isActive)
-                    game[propName].stop();
+                if (game[propName].selectedRecipeID !== recipeID && game[propName].isActive && !game[propName].stop())
+                    return;
                 game[propName].selectedRecipeID = recipeID;
                 game[propName].renderQueue.selectedLog = true;
                 game[propName].renderQueue.logQty = true;
@@ -2611,8 +2610,8 @@
 
         ETA.selectSpellOnClick = (skillName, propName, spellID) => {
             if (game[propName].selectedSpellID !== spellID) {
-                if (game[propName].isActive)
-                    game[propName].stop();
+                if (game[propName].isActive && !game[propName].stop())
+                    return;
                 game[propName].selectedConversionItem = -1;
             }
             game[propName].selectedSpellID = spellID;
@@ -2629,6 +2628,8 @@
         }
 
         ETA.selectItemOnClick = (skillName, propName, itemID) => {
+            if (game.isGolbinRaid)
+                return;
             game[propName].selectedConversionItem = itemID;
             game[propName].renderQueue.selectedSpellInfo = true;
             hideElement(altMagicItemMenu);
@@ -2643,6 +2644,8 @@
         }
 
         ETA.selectBarOnClick = (skillName, propName, recipe) => {
+            if (game.isGolbinRaid)
+                return;
             game[propName].selectedSmithingRecipe = recipe;
             game[propName].renderQueue.selectedSpellInfo = true;
             hideElement(altMagicItemMenu);
@@ -2660,10 +2663,10 @@
             const category = recipe.category;
             const existingRecipe = game[propName].selectedRecipes.get(category);
             if (game[propName].isActive) {
-                if (category === game[propName].activeCookingCategory && recipe !== game[propName].activeRecipe)
-                    game[propName].stop();
-                else if (game[propName].passiveCookTimers.has(category) && recipe !== existingRecipe)
-                    game[propName].stopPassiveCooking(category);
+                if (category === game[propName].activeCookingCategory && recipe !== game[propName].activeRecipe && !game[propName].stop())
+                    return;
+                else if (game[propName].passiveCookTimers.has(category) && recipe !== existingRecipe && !game[propName].stopPassiveCooking(category))
+                    return;
             }
             game[propName].selectedRecipes.set(category, recipe);
             game[propName].renderQueue.selectedRecipes.add(category);
@@ -2678,11 +2681,27 @@
         }
 
         ETA.selectAltRecipeOnClick = (skillName, propName, altID) => {
-            if (altID !== game[propName].selectedAltRecipe && game[propName].isActive) {
-                game[propName].stop();
-            }
+            if (altID !== game[propName].selectedAltRecipe && game[propName].isActive && !game[propName].stop())
+                return;
             game[propName].setAltRecipes.set(game[propName].selectedRecipe, altID);
             game[propName].renderQueue.selectedRecipe = true;
+            game[propName].render();
+            try {
+                ETA.timeRemainingWrapper(Skills[skillName], false);
+            } catch (e) {
+                ETA.error(e);
+            }
+        }
+
+        ETA.onAreaFishSelection = (skillName, propName, area, fish) => {
+            const previousSelection = game[propName].selectedAreaFish.get(area);
+            if (area === game[propName].activeFishingArea && previousSelection !== fish && game[propName].isActive && !game[propName].stop())
+                return;
+            game[propName].selectedAreaFish.set(area, fish);
+            game[propName].renderQueue.selectedAreaFish = true;
+            game[propName].renderQueue.selectedAreaFishRates = true;
+            game[propName].renderQueue.areaChances = true;
+            game[propName].renderQueue.actionMastery.add(fish.masteryID);
             game[propName].render();
             try {
                 ETA.timeRemainingWrapper(Skills[skillName], false);
@@ -2694,6 +2713,7 @@
         // gathering, only override startActionTimer
         game.woodcutting.startActionTimer = () => ETA.startActionTimer('Woodcutting', 'woodcutting');
         game.fishing.startActionTimer = () => ETA.startActionTimer('Fishing', 'fishing');
+        game.fishing.onAreaFishSelection = (area, fish) => ETA.onAreaFishSelection('Fishing', 'fishing', area, fish);
         game.mining.startActionTimer = () => {
             if (!game.mining.selectedRockActiveData.isRespawning) {
                 ETA.startActionTimer('Mining', 'mining');
