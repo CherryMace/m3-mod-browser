@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Melvor Action Queue
-// @version      1.2.3
+// @version      1.2.4
 // @description  Adds an interface to queue up actions based on triggers you set
 // @author       8992
 // @match        https://*.melvoridle.com/*
@@ -1330,7 +1330,7 @@ function loadAQ() {
 
     Summoning.marks.forEach((item) => {
       options.triggers["Mastery Level"]["Summoning"][items[item.itemID].name] = "num";
-      if (item.nonShardItemCosts.length == 1) {
+      if (item.nonShardItemCosts.length <= 1) {
         options.actions["Start Skill"]["Summoning"][items[item.itemID].name] = null;
       } else {
         options.actions["Start Skill"]["Summoning"][items[item.itemID].name] = {};

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor Snippets
 // @namespace	http://tampermonkey.net/
-// @version		0.0.14
+// @version		0.0.18
 // @description	Collection of various snippets
 // @grant		none
 // @author		GMiclotte
@@ -24,7 +24,7 @@
 
 function startSnippets() {
 
-const snippet = {
+window.snippet = {
     name: '',
     log: (...args) => console.log('Snippets:', ...args),
     start: () => snippet.log(`Loading ${snippet.name}.`),
@@ -39,11 +39,24 @@ const snippet = {
 snippet.name = 'AgilityObstacleBuildsRemaining.js';
 snippet.start();
 // show agility obstacles that have been built less than 10 times
-listObstaclesWithFewerThanTenBuilds = () => {
+window.listObstaclesWithFewerThanTenBuilds = () => {
     agilityObstacleBuildCount.map((_, i) => i)
         .filter(i => agilityObstacleBuildCount[i] < 10)
         .map(i => agilityObstacles[i])
         .map(x => [x.category + 1, x.name]);
+}
+snippet.end();
+
+///////////////////
+//BankedHealth.js//
+///////////////////
+snippet.name = 'BankedHealth.js';
+snippet.start();
+// return total healing in bank
+window.bankedHealth = () => {
+    return items.filter(x => x.healsFor)
+        .map(x => player.getFoodHealing(x) * combatManager.bank.getQty(x.id))
+        .reduce((a, b) => a + b, 0);
 }
 snippet.end();
 
@@ -120,7 +133,7 @@ snippet.end();
 snippet.name = 'GetLocalisationKey.js';
 snippet.start();
 // Get Localisation Key for a given string
-getLocalisationKey = (text) => {
+window.getLocalisationKey = (text) => {
     const list = []
     for (const key in loadedLangJson) {
         for (const identifier in loadedLangJson[key]) {
@@ -139,16 +152,69 @@ snippet.end();
 snippet.name = 'ListRaidUnlocks.js';
 snippet.start();
 // list unlocked raid items
-listCrateItems = (unlocked = true) =>
+window.listCrateItems = (unlocked = true) =>
     RaidManager.crateItemWeights.filter(x =>
         unlocked === game.golbinRaid.ownedCrateItems.has(x.itemID)
     ).forEach(x =>
-        console.log(items[x.itemID].name)
+        snippet.log(items[x.itemID].name)
     );
 // to list the ones you have unlocked:
 // listCrateItems()
 // to list the ones you haven't unlocked:
 // listCrateItems(false)
+snippet.end();
+
+////////////////
+//LootDrops.js//
+////////////////
+snippet.name = 'LootDrops.js';
+snippet.start();
+// Loot Drops
+window.lootDrops = () => {
+    const loot = combatManager.loot;
+    // only loot when the loot table is full
+    if (loot.drops.length < loot.maxLoot) {
+        return;
+    }
+    // when the bank is full, update the bank cache
+    const bankFull = bank.length === getMaxBankSpace();
+    if (bankFull) {
+        for (let i = 0; i < bank.length; i++) {
+            bankCache[bank[i].id] = i;
+        }
+    }
+    loot.drops = loot.drops.filter(drop => {
+        const itemID = drop.item.id;
+        if (bankFull) {
+            // reject all items that aren't in the bank cache
+            if (bankCache[itemID] === undefined) {
+                return false;
+            }
+        }
+        if (addItemToBank(itemID, drop.qty))
+            game.stats.Combat.add(CombatStats.ItemsLooted, drop.qty);
+        return false;
+    });
+}
+
+// hook to player.rewardGPForKill, this runs on player death and is a relatively small method
+eval(player.rewardGPForKill.toString().replaceAll(
+    'this',
+    'player',
+).replace(
+    'rewardGPForKill(){',
+    'window.rewardGPForKill = () => {window.lootDrops();',
+));
+
+window.hookLootDrops = () => {
+    if (player) {
+        player.rewardGPForKill = window.rewardGPForKill;
+    } else {
+        setTimeout(window.hookLootDrops, 50);
+    }
+}
+
+// window.hookLootDrops();
 snippet.end();
 
 //////////////////
@@ -300,7 +366,7 @@ masteryBuyer.overview = (minPercent = 95) => {
             return;
         }
         const currentBase = masteryBuyer.currentBase(skillID);
-        console.log(`${skill.name}: ${currentBase} -> ${maxBase}`);
+        snippet.log(`${skill.name}: ${currentBase} -> ${maxBase}`);
     });
 }
 
@@ -311,7 +377,7 @@ masteryBuyer.remaining = (skillID, target = 99) => {
         xp += Math.max(0, xpTarget - masteryXp);
     });
     xp = Math.round(xp)
-    console.log(formatNumber(xp))
+    snippet.log(formatNumber(xp))
     return xp
 }
 snippet.end();
@@ -322,7 +388,7 @@ snippet.end();
 snippet.name = 'PrintSynergyList.js';
 snippet.start();
 // functions to print synergies per category (cb vs non-cb)
-printSynergy = (x, y) => console.log('- [ ]',
+window.printSynergy = (x, y) => snippet.log('- [ ]',
     x.summoningID,
     parseInt(y),
     items[x.itemID].name,
@@ -331,7 +397,7 @@ printSynergy = (x, y) => console.log('- [ ]',
     SUMMONING.Synergies[x.summoningID][y].modifiers
 );
 
-printCombatSynergyList = () => {
+window.printCombatSynergyList = () => {
     // get combat synergies
     summoningItems.filter(x => items[x.itemID].summoningMaxHit).map(x => {
         for (y in SUMMONING.Synergies[x.summoningID]) {
@@ -340,7 +406,7 @@ printCombatSynergyList = () => {
     });
 }
 
-printNonCombatSynergyList = () => {
+window.printNonCombatSynergyList = () => {
     // get non-combat synergies
     summoningItems.filter(x => !items[x.itemID].summoningMaxHit).map(x => {
         for (y in SUMMONING.Synergies[x.summoningID]) {
@@ -356,7 +422,7 @@ snippet.end();
 snippet.name = 'QuickEquipCape.js';
 snippet.start();
 // Quick Equip Max/Comp Cape
-quickEquipSkillcape = (skill) => {
+window.quickEquipSkillcape = (skill) => {
     const capes = [
         Items.Cape_of_Completion,
         Items.Max_Skillcape,
@@ -405,7 +471,7 @@ window.reclaimMasteryTokens = () => {
         if (a > 0 && b >= 0) {
             bank[b].qty += a;
             MASTERY[s].pool -= a * Math.floor(getMasteryPoolTotalXP(s)*0.001);
-            snippets.log('reclaimed', a, Skills[s], 'tokens');  
+            snippet.log('reclaimed', a, Skills[s], 'tokens');
         }
     });
 }
@@ -438,14 +504,53 @@ document.getElementById('header-cloud-save-time').remove();
 document.getElementById('header-cloud-save-btn-connected').remove();
 snippet.end();
 
+/////////////////////////
+//RerollJuniorFarmer.js//
+/////////////////////////
+snippet.name = 'RerollJuniorFarmer.js';
+snippet.start();
+// automate rerolling and attacking of Junior Farmer
+window.rerollJuniorFarmer = () => {
+    // rewardGPForKill loots drops and rerolls slayer task
+    eval(player.rewardGPForKill.toString().replaceAll(
+        'this',
+        'player',
+    ).replace(
+        'rewardGPForKill(){',
+        'window.rewardGPForKill = () => {' +
+        'window.lootDrops();' +
+        'window.rerollSlayerTaskFast([Monsters.JuniorFarmer], 0, false);',
+    ));
+    player.rewardGPForKill = window.rewardGPForKill;
+
+    // process death restarts fight
+    let checkDeath = combatManager.checkDeath.toString().slice(0,-1); // remove closing curly brace
+    checkDeath += 'if (playerDied) {' +
+        'combatManager.selectMonster(Monsters.JuniorFarmer, getMonsterArea(Monsters.JuniorFarmer));' +
+        'snippet.log("player death: new fight initiated");' +
+        '}';
+    checkDeath += '}'; // add closing curly brace
+    eval(checkDeath.replaceAll(
+        'this',
+        'combatManager',
+    ).replace(
+        'checkDeath(){',
+        'window.checkDeath = () => {',
+    ));
+    combatManager.checkDeath = window.checkDeath;
+}
+
+// window.rerollJuniorFarmer();
+snippet.end();
+
 ///////////////////
 //RerollSlayer.js//
 ///////////////////
 snippet.name = 'RerollSlayer.js';
 snippet.start();
 //reroll slayer task until desired task is met
-window.rerollSlayerTask = (monsterIDs, tier, extend = true) => {
-    if (snippets.stopRerolling) {
+window.rerollSlayerTask = (monsterIDs, tier, extend = true, loop = true) => {
+    if (window.stopRerolling) {
         return;
     }
     const task = combatManager.slayerTask;
@@ -455,15 +560,73 @@ window.rerollSlayerTask = (monsterIDs, tier, extend = true) => {
         // only do something if slayer task timer is not running
         if (!combatManager.slayerTask.active || !monsterIDs.includes(taskID)) {
             // roll task if we don't have one, or if it has the wrong monster
-            console.log(`rerolling ${taskName} for tier ${tier} task ${monsterIDs.map(monsterID => MONSTERS[monsterID].name).join(', ')}`);
+            snippet.log(`rerolling ${taskName} for tier ${tier} task ${monsterIDs.map(monsterID => MONSTERS[monsterID].name).join(', ')}`);
             combatManager.slayerTask.selectTask(tier, true, true, false);
         } else if (extend && !task.extended) {
             // extend task if it is the right monster
-            console.log(`extending ${taskName}`);
+            snippet.log(`extending ${taskName}`);
             combatManager.slayerTask.extendTask();
         }
     }
-    setTimeout(() => rerollSlayerTask(monsterIDs, tier, extend), 1000);
+    if (loop) {
+        setTimeout(() => rerollSlayerTask(monsterIDs, tier, extend), 1000);
+    }
+}
+
+// simulate rerolling of slayer task until desired task is met
+window.rerollSlayerTaskFast = (monsterIDs, tier, extend = true, verbose = false) => {
+    const task = combatManager.slayerTask;
+    if (task.taskTimer.active) {
+        return;
+    }
+    // only do something if slayer task timer is not running
+    if (task.active && monsterIDs.includes(task.monster.id)) {
+        if (extend && !task.extended) {
+            // extend task if it is the right monster
+            if (verbose) {
+                snippet.log(`extending ${MONSTERS[task.monster.id].name}`);
+            }
+            task.extendTask();
+        }
+        return;
+    }
+    // roll task if we don't have one, or if it has the wrong monster
+    const monsterSelection = task.getMonsterSelection(tier).map(x => x.id);
+    const monsterSelectionMap = {};
+    monsterSelection.forEach(x => monsterSelectionMap[x] = true);
+    monsterIDs = monsterIDs.filter(x => monsterSelectionMap[x]);
+    if (monsterIDs.length === 0) {
+        snippet.log(`no valid monsterIDs provided for tier ${tier}`);
+        return;
+    }
+    // simulate rerolls until one of the target monsters is rolled
+    let rerolls = 1;
+    const prob = monsterIDs.length / monsterSelection.length;
+    while (Math.random() > prob) {
+        rerolls++;
+    }
+    let scAmount = 0;
+    if (tier > 0) {
+        scAmount = SlayerTask.data[tier].cost * rerolls;
+        if (scAmount > player._slayercoins) {
+            snippet.log(`insufficient slayer coins, needed ${scAmount}, have ${player._slayercoins}`);
+            return;
+        }
+        task.player.removeSlayerCoins(scAmount, true);
+    }
+    // randomly pick one of the valid monsters
+    const monsterID = monsterIDs[rollInteger(0, monsterIDs.length - 1)];
+    // mimic task.selectTask
+    task.monster = MONSTERS[monsterID];
+    task.tier = tier;
+    task.active = true;
+    task.extended = false;
+    task.killsLeft = task.getTaskLength(tier);
+    task.renderRequired = true;
+    task.renderNewButton = true;
+    if (verbose) {
+        snippet.log(`simulated ${rerolls} rerolls for tier ${tier} task ${MONSTERS[monsterID].name} costing ${scAmount}SC`);
+    }
 }
 snippet.end();
 
@@ -473,7 +636,7 @@ snippet.end();
 snippet.name = 'ShardsUsed.js';
 snippet.start();
 // compute total shards used
-shardsUsed = () => {
+window.shardsUsed = () => {
     // compute amount of gp spent on summoning shards that have been used (for summoning or agility obstacles)
     items.map((x, i) => [x, i])
         .filter(x => x[0].type === 'Shard' && x[0].category === 'Summoning')
@@ -532,6 +695,47 @@ eval(claimToken.toString()
     .replace('qty>=tokensToFillPool', 'false')
     .replace(/^function (\w+)/, "window.$1 = function")
 );
+snippet.end();
+
+/////////////
+//Unsell.js//
+/////////////
+snippet.name = 'Unsell.js';
+snippet.start();
+// unsell sold items
+window.unsell = (id, count = Infinity) => {
+    if (count < 0) {
+        return;
+    }
+    const timesSold = game.stats.Items.get(id, ItemStats.TimesSold);
+    const gpFromSales = game.stats.Items.get(id, ItemStats.GpFromSale);
+    if (timesSold === 0) {
+        snippet.log("zero times sold");
+        return;
+    }
+    // check if transaction is affordable
+    const times = Math.min(count, timesSold);
+    const cost = Math.ceil(gpFromSales / timesSold * times);
+    if (gp < cost) {
+        snippet.log("can't afford: " + times + " costs " + cost + " have " + gp);
+        return;
+    }
+    // add item
+    if (times > 0) {
+        addItemToBank(id, times);
+    }
+    game.stats.Items.add(id, ItemStats.TimesFound, -times);
+    game.stats.Items.add(id, ItemStats.TimesSold, -times);
+    // remove cost
+    gp = Math.floor(gp - cost);
+    game.stats.Items.add(id, ItemStats.GpFromSale, -cost);
+    updateGP();
+    // fix statistics
+    game.stats.General.add(GeneralStats.TotalItemsSold, -times);
+    updateBank();
+    // log transaction
+    snippet.log("bought " + times + " for " + cost);
+}
 snippet.end();
 
 // footer start

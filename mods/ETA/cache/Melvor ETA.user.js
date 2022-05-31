@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Melvor ETA
 // @namespace	http://tampermonkey.net/
-// @version		0.11.3
+// @version		0.11.4
 // @description	Shows xp/h and mastery xp/h, and the time remaining until certain targets are reached. Takes into account Mastery Levels and other bonuses.
 // @description	Please report issues on https://github.com/gmiclotte/melvor-scripts/issues or message TinyCoyote#1769 on Discord
 // @description	The last part of the version number is the most recent version of Melvor that was tested with this script. More recent versions might break the script.
@@ -895,6 +895,9 @@
 
         //Return the preservation for any mastery and pool
         masteryPreservation = (initial, masteryXp, poolXp) => {
+            if (initial.skillID === Skills.Magic) {
+                return initial.runePreservationChance;
+            }
             if (!initial.hasMastery) {
                 return 0;
             }
@@ -1226,10 +1229,12 @@
                 targetPool: 0,
                 targetPoolXp: 0,
                 poolLim: [], // Xp need to reach next pool checkpoint
-                staticPreservation: 0,
                 maxPoolXp: 0,
                 tokens: 0,
                 poolLimCheckpoints: [10, 25, 50, 95, 100, Infinity], //Breakpoints for mastery pool bonuses followed by Infinity
+                // preservation
+                staticPreservation: 0,
+                runePreservationChance: game.altMagic.runePreservationChance,
                 //////////////
                 //DEPRECATED//
                 //////////////
@@ -2380,6 +2385,9 @@
                 }
             }
             timeLeftElement.style.display = "block";
+            if (timeLeftElement.textContent.length === 0) {
+                timeLeftElement.textContent = "Melvor ETA";
+            }
             return timeLeftElement;
         }
 
